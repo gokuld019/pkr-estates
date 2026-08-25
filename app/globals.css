@@ -1,26 +1,75 @@
+/* app/globals.css */
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  margin: 0;
+  padding: 0;
+  background-color: #0b0a09;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), 'Geist', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #0b0a09;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Font utility classes */
+.font-cormorant {
+  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+}
+
+.font-geist {
+  font-family: var(--font-geist-sans), 'Geist', sans-serif;
+}
+
+.font-geist-mono {
+  font-family: var(--font-geist-mono), 'Geist Mono', monospace;
+}
+
+.font-playfair {
+  font-family: var(--font-serif), 'Playfair Display', Georgia, serif;
+}
+
+.font-caveat {
+  font-family: var(--font-script), 'Caveat', cursive;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+}
+
+.pkr-footer h1,
+.pkr-footer h2,
+.pkr-footer h3,
+.pkr-footer h4 {
+  font-family: var(--font-geist-sans), 'Geist', sans-serif;
+}
+
+/* Hover effects */
+.project-card-hover:hover {
+  background: rgba(244, 244, 242, 0.04);
+  border-color: rgba(244, 244, 242, 0.12);
+  transform: translateY(-4px);
+}
+
+.project-item-hover:hover {
+  background: rgba(244, 244, 242, 0.04);
+  border-color: rgba(244, 244, 242, 0.12);
+  transform: translateY(-4px);
+}
+
+.view-project-btn-hover {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.view-project-btn-hover:hover {
+  color: rgba(244, 244, 242, 0.7);
+  padding-left: 0.5rem;
 }
