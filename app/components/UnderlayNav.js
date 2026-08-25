@@ -19,7 +19,7 @@ const NAV_LINKS = [
     ],
   },
   { label: "EMI Calculator", href: "/emi-calculator" },
-  { label: "Blogs", href: "/blogs" },
+  { label: "Blogs", href: "/" },
   { label: "Contact Us", href: "/contact-us" },
 ];
 
