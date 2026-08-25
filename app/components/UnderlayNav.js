@@ -7,6 +7,22 @@ import gsap from "gsap";
 import { CustomEase } from "gsap/CustomEase";
 import Image from "next/image";
 
+/* ================== BRAND PALETTE (from PKR ESTATES logo) ==================
+   Deep blue   #12459B  — primary brand blue ("PKR" wordmark)
+   Blue tint   #1E5BC6  — lighter swirl blue
+   Green       #0BA37F  — "ESTATES" wordmark / swirl green
+   Ink         #0C2340  — near-black navy for text
+   Cream       #F5F7FA  — cool off-white panel
+=========================================================================== */
+const BRAND = {
+  blue: "#12459B",
+  blueLight: "#1E5BC6",
+  green: "#0BA37F",
+  ink: "#0C2340",
+  panel: "#F4F7FA",
+  border: "rgba(12,35,64,0.15)",
+};
+
 const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
@@ -343,10 +359,7 @@ export default function UnderlayNav() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  // Force-close the menu on every route change. This fixes the "menu stays
-  // open after navigating" bug for ANY navigation path (Link clicks outside
-  // handleNavigation, browser back/forward, programmatic router.push, etc.),
-  // not just clicks that go through this component's own link handler.
+  // Force-close the menu on every route change.
   useEffect(() => {
     if (toggleFnRef.current) {
       toggleFnRef.current.closeInstantly();
@@ -372,6 +385,27 @@ export default function UnderlayNav() {
 
   return (
     <div ref={rootRef} style={styles.wrap}>
+      <style jsx global>{`
+        .pkr-link-large:hover {
+          background-color: rgba(18, 69, 155, 0.07);
+          color: ${BRAND.blue};
+        }
+        .pkr-link-large-current:hover {
+          background-color: ${BRAND.blue};
+          color: #ffffff;
+        }
+        .pkr-sublink:hover {
+          background-color: rgba(11, 163, 127, 0.1);
+          color: ${BRAND.green};
+        }
+        .pkr-small-link {
+          transition: color 0.2s ease;
+        }
+        .pkr-small-link:hover {
+          color: ${BRAND.green};
+        }
+      `}</style>
+
       <header
         ref={headerRef}
         style={{
@@ -390,7 +424,7 @@ export default function UnderlayNav() {
           aria-label="open menu"
           style={{
             ...styles.toggle,
-            color: scrolledPastHero ? "rgba(20,19,19,0.85)" : "#f4f4f2",
+            color: scrolledPastHero ? BRAND.blue : "#ffffff",
           }}
         >
           <span style={styles.toggleTextWrap}>
@@ -416,6 +450,7 @@ export default function UnderlayNav() {
                 <li key={item.label} data-reveal-l style={styles.linkListItem}>
                   <button
                     onClick={(e) => handleParentClick(item, e)}
+                    className={isCurrent ? "pkr-link-large-current" : "pkr-link-large"}
                     style={{
                       ...styles.linkLargeButton,
                       ...(isCurrent ? styles.linkLargeButtonCurrent : null),
@@ -427,6 +462,7 @@ export default function UnderlayNav() {
                         <span
                           style={{
                             ...styles.chevron,
+                            color: isCurrent ? "#ffffff" : BRAND.green,
                             transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
                           }}
                         >
@@ -450,6 +486,7 @@ export default function UnderlayNav() {
                           <li key={child.label}>
                             <button
                               onClick={(e) => handleNavigation(child.href, e)}
+                              className="pkr-sublink"
                               style={{
                                 ...styles.subLinkButton,
                                 ...(isChildCurrent ? styles.subLinkButtonCurrent : null),
@@ -476,7 +513,9 @@ export default function UnderlayNav() {
               <ul style={styles.linkListSmall}>
                 {SOCIAL_LINKS.map((item) => (
                   <li key={item.label} data-reveal-s>
-                    <a href={item.href} style={styles.linkSmall}>{item.label}</a>
+                    <a href={item.href} className="pkr-small-link" style={styles.linkSmall}>
+                      {item.label}
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -488,7 +527,9 @@ export default function UnderlayNav() {
               <ul style={styles.linkListSmall}>
                 {QUICK_LINKS.map((item) => (
                   <li key={item.label} data-reveal-s>
-                    <a href={item.href} style={styles.linkSmall}>{item.label}</a>
+                    <a href={item.href} className="pkr-small-link" style={styles.linkSmall}>
+                      {item.label}
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -545,7 +586,8 @@ const styles = {
   },
   headerOnWhite: {
     backgroundColor: "#ffffff",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+    boxShadow: `0 2px 14px rgba(12,35,64,0.10)`,
+    borderBottom: `1px solid rgba(18,69,155,0.10)`,
   },
   logo: {
     display: "inline-flex",
@@ -578,7 +620,7 @@ const styles = {
   toggleLabel: {
     fontFamily: "var(--font-manrope), 'Manrope', 'Segoe UI', sans-serif",
     fontSize: "1rem",
-    fontWeight: 500,
+    fontWeight: 600,
     lineHeight: "1.6em",
   },
   toggleIconWrap: {
@@ -603,7 +645,8 @@ const styles = {
     zIndex: 1,
     width: "min(28em, 92vw)",
     maxWidth: "100%",
-    backgroundColor: "#f4f4f2",
+    backgroundColor: BRAND.panel,
+    borderLeft: `3px solid ${BRAND.green}`,
     overflow: "hidden",
     willChange: "transform",
   },
@@ -641,7 +684,7 @@ const styles = {
     fontSize: "clamp(1.9rem, 4.6vw, 2.9rem)",
     lineHeight: 1.15,
     letterSpacing: "-0.02em",
-    color: "#141313",
+    color: BRAND.ink,
     textDecoration: "none",
     background: "none",
     border: "none",
@@ -662,12 +705,12 @@ const styles = {
   chevron: {
     display: "inline-block",
     fontSize: "0.65em",
-    transition: "transform 0.3s ease",
+    transition: "transform 0.3s ease, color 0.2s ease",
     lineHeight: 1,
   },
   linkLargeButtonCurrent: {
     color: "#ffffff",
-    backgroundColor: "#f4633a",
+    background: `linear-gradient(100deg, ${BRAND.blue} 0%, ${BRAND.blueLight} 62%, ${BRAND.green} 190%)`,
   },
   subLinkList: {
     listStyle: "none",
@@ -684,18 +727,21 @@ const styles = {
     textAlign: "left",
     background: "none",
     border: "none",
+    borderLeft: `2px solid rgba(18,69,155,0.18)`,
     cursor: "pointer",
     padding: "0.4em 0.7em",
     margin: 0,
     fontFamily: "var(--font-manrope), 'Manrope', 'Segoe UI', sans-serif",
     fontSize: "1.1rem",
     fontWeight: 500,
-    color: "rgba(20,19,19,0.7)",
+    color: "rgba(12,35,64,0.68)",
     borderRadius: "0.35em",
-    transition: "background-color 0.2s ease, color 0.2s ease",
+    transition: "background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease",
   },
   subLinkButtonCurrent: {
-    color: "#f4633a",
+    color: BRAND.green,
+    borderLeftColor: BRAND.green,
+    backgroundColor: "rgba(11,163,127,0.08)",
   },
   bottom: {
     position: "relative",
@@ -709,8 +755,8 @@ const styles = {
     top: 0,
     left: 0,
     width: "100%",
-    height: "1px",
-    background: "rgba(20,19,19,0.15)",
+    height: "2px",
+    background: `linear-gradient(90deg, ${BRAND.blue} 0%, ${BRAND.blueLight} 45%, ${BRAND.green} 100%)`,
     transformOrigin: "0% 50%",
   },
   bottomCol: {
@@ -723,7 +769,10 @@ const styles = {
   linkSmallFaded: {
     fontFamily: "var(--font-manrope), 'Manrope', 'Segoe UI', sans-serif",
     fontSize: "0.85rem",
-    color: "rgba(20,19,19,0.45)",
+    fontWeight: 600,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: BRAND.green,
   },
   linkListSmall: {
     listStyle: "none",
@@ -736,7 +785,7 @@ const styles = {
   linkSmall: {
     fontFamily: "var(--font-manrope), 'Manrope', 'Segoe UI', sans-serif",
     fontSize: "0.95rem",
-    color: "rgba(20,19,19,0.85)",
+    color: "rgba(12,35,64,0.85)",
     textDecoration: "none",
   },
 
@@ -752,7 +801,7 @@ const styles = {
   dark: {
     position: "absolute",
     inset: 0,
-    background: "rgba(0,0,0,0.45)",
+    background: "rgba(12,35,64,0.55)",
   },
   overlayBorders: {
     position: "absolute",
@@ -771,19 +820,19 @@ const styles = {
   overlayBorder: {
     width: "100%",
     height: "1em",
-    backgroundColor: "#fff",
+    backgroundColor: BRAND.panel,
   },
   overlayCorner: {
     width: "2em",
     height: "2em",
-    color: "#fff",
+    color: BRAND.panel,
     transformOrigin: "100% 0%",
     backgroundImage:
-      "radial-gradient(circle farthest-side at 0 100%, rgba(255,255,255,0) 99%, #fff)",
+      "radial-gradient(circle farthest-side at 0 100%, rgba(244,247,250,0) 99%, #F4F7FA)",
   },
   overlayCornerBottom: {
     transformOrigin: "100% 100%",
     backgroundImage:
-      "radial-gradient(circle farthest-side at 0 0, rgba(255,255,255,0) 99%, #fff)",
+      "radial-gradient(circle farthest-side at 0 0, rgba(244,247,250,0) 99%, #F4F7FA)",
   },
 };
