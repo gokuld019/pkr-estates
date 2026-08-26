@@ -33,7 +33,7 @@ const COMPLETED_PROJECTS = [
   },
 ];
 
-const BP = { mobile: 640, tablet: 1024 };
+const BP = { xs: 400, mobile: 640, tablet: 1024 };
 
 export default function CompletedProjectsSection() {
   const sectionRef = useRef(null);
@@ -44,10 +44,13 @@ export default function CompletedProjectsSection() {
     typeof window !== "undefined" ? window.innerWidth : 1280
   );
 
+  const isXs = viewportWidth < BP.xs;
   const isMobile = viewportWidth < BP.mobile;
   const isTablet = viewportWidth >= BP.mobile && viewportWidth < BP.tablet;
+
+  // Desktop (>=1024px) keeps the ORIGINAL fixed values untouched.
   const gridColumns = isMobile ? "1fr" : "1fr 1fr";
-  const gridGap = isMobile ? 14 : isTablet ? 18 : 20;
+  const gridGap = isXs ? 10 : isMobile ? 14 : isTablet ? 18 : 20;
 
   useEffect(() => {
     const handleResize = () => setViewportWidth(window.innerWidth);
@@ -113,7 +116,7 @@ export default function CompletedProjectsSection() {
   }, []);
 
   const handleEnter = (i) => {
-    if (isMobile) return; // no hover scale on touch devices
+    if (isMobile || isTablet) return; // no hover scale on touch devices
     const img = imageRefs.current[i];
     if (!img) return;
     gsap.to(img, {
@@ -125,7 +128,7 @@ export default function CompletedProjectsSection() {
   };
 
   const handleLeave = (i) => {
-    if (isMobile) return;
+    if (isMobile || isTablet) return;
     const img = imageRefs.current[i];
     if (!img) return;
     gsap.to(img, {
@@ -170,10 +173,7 @@ export default function CompletedProjectsSection() {
         }}
       >
         {COMPLETED_PROJECTS.map((project, i) => (
-          <div
-            key={project.name}
-            style={styles.column}
-          >
+          <div key={project.name} style={styles.column}>
             <div data-fade style={styles.titleRow}>
               <span style={styles.dot} />
               <span style={styles.title}>{project.name}</span>
@@ -182,7 +182,10 @@ export default function CompletedProjectsSection() {
             <div
               ref={(el) => (wrapRefs.current[i] = el)}
               data-fade
-              style={styles.imageWrap}
+              style={{
+                ...styles.imageWrap,
+                height: isXs ? "58vw" : isMobile ? "62vw" : isTablet ? "42vw" : "clamp(260px, 62vw, 560px)",
+              }}
               onMouseEnter={() => handleEnter(i)}
               onMouseLeave={() => handleLeave(i)}
             >
@@ -236,7 +239,6 @@ const styles = {
     boxSizing: "border-box",
   },
 
-  // ✅ BODY FONT: Figtree Regular
   subtitle: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontSize: "0.9rem",
@@ -252,7 +254,6 @@ const styles = {
     minWidth: "200px",
   },
 
-  // ✅ HEADING FONT: Figtree Light
   headingLine: {
     display: "inline-block",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
@@ -271,7 +272,6 @@ const styles = {
     flex: "0 0 auto",
   },
 
-  // ✅ BODY FONT: Figtree Medium
   viewAllBtn: {
     display: "inline-flex",
     alignItems: "center",
@@ -332,7 +332,6 @@ const styles = {
     flex: "0 0 auto",
   },
 
-  // ✅ BODY FONT: Figtree Medium
   title: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontSize: "clamp(0.82rem, 2vw, 0.9rem)",
@@ -344,7 +343,6 @@ const styles = {
     textOverflow: "ellipsis",
   },
 
-  // ✅ BODY FONT: Figtree Medium
   countBadge: {
     display: "inline-flex",
     alignItems: "center",
@@ -364,7 +362,6 @@ const styles = {
     position: "relative",
     width: "100%",
     flex: "1 1 auto",
-    height: "clamp(260px, 62vw, 560px)",
     overflow: "hidden",
     backgroundColor: "#e8e8e8",
     cursor: "pointer",
@@ -373,6 +370,7 @@ const styles = {
   image: {
     position: "absolute",
     left: 0,
+    top: 0,
     width: "100%",
     height: "100%",
     objectFit: "cover",
@@ -381,7 +379,6 @@ const styles = {
     willChange: "transform",
   },
 
-  // ✅ BODY FONT: Figtree Light
   plusIcon: {
     position: "absolute",
     left: "16px",
@@ -411,7 +408,6 @@ const styles = {
     fontWeight: 700,
   },
 
-  // ✅ BODY FONT: Figtree Medium
   ribbonText: {
     writingMode: "vertical-rl",
     transform: "rotate(180deg)",
@@ -427,7 +423,6 @@ const styles = {
     textAlign: "right",
   },
 
-  // ✅ BODY FONT: Figtree Regular
   brandName: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontSize: "0.75rem",

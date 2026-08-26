@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -19,12 +19,12 @@ const PROJECTS = [
         "PKR ESTATES Gurudev, Next to SHRIRAM SHANKARI, Perumathunallur, Chennai, Tamil Nadu 603202, India",
       price: " 22 Lacs Onwards*",
       projectType: "Apartments",
-      developmentSize: "5 Acres",
-      bedrooms: "1BHK & 2BHK & 3BHK",
+      developmentSize: "0.6 Acres",
+      bedrooms: "1BHK & 2BHK",
       totalUnits: "90 Apartments",
       completionLabel: "TIME LEFT FOR PROJECT COMPLETION",
-      completionDate: "JAN 2029",
-      countdown: { days: "891", hours: "4", minutes: "58", seconds: "4" },
+      completionDate: "DEC 2026",
+      countdown: { days: "122", hours: "12", minutes: "58", seconds: "4" },
       amenities: [
         "Swimming Pool",
         "Club House",
@@ -56,9 +56,9 @@ const PROJECTS = [
       address: "Perumattunallur Village, Guduvancheri, Chennai South, Chennai",
       price: "20.01 Lacs Onwards*",
       projectType: "Apartments",
-      developmentSize: "3.2 Acres",
-      bedrooms: "1BHK & 2BHK & 3 BHK",
-      totalUnits: "120 Units",
+      developmentSize: "1.41 Acres",
+      bedrooms: "Studio, 1BHK, 2BHK & 3 BHK",
+      totalUnits: "186 Units",
       completionLabel: "TIME LEFT FOR PROJECT COMPLETION",
       completionDate: "JUN 2028",
       countdown: { days: "652", hours: "11", minutes: "22", seconds: "40" },
@@ -69,11 +69,42 @@ const PROJECTS = [
 const CHEVRON_CLIP =
   "polygon(0% 0%, 55% 0%, 100% 50%, 55% 100%, 0% 100%, 40% 50%)";
 
+// Tailwind-style breakpoints: mobile <640, tablet 640-1024, laptop 1024-1440, desktop 1440-1920, big 1920+
+const BREAKPOINTS = {
+  mobile: 639,
+  tablet: 1023,
+  laptop: 1439,
+  desktop: 1919,
+};
+
+function useBreakpoint() {
+  const [bp, setBp] = useState("desktop");
+
+  useEffect(() => {
+    const calc = () => {
+      const w = window.innerWidth;
+      if (w <= BREAKPOINTS.mobile) return "mobile";
+      if (w <= BREAKPOINTS.tablet) return "tablet";
+      if (w <= BREAKPOINTS.laptop) return "laptop";
+      if (w <= BREAKPOINTS.desktop) return "desktop";
+      return "big";
+    };
+    const onResize = () => setBp(calc());
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  return bp;
+}
+
 export default function ProjectsSection() {
   const sectionRef = useRef(null);
   const headingLineRef = useRef(null);
   const stripRef = useRef(null);
   const dotRefs = useRef([]);
+  const bp = useBreakpoint();
+  const isStacked = bp === "mobile" || bp === "tablet";
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -110,38 +141,57 @@ export default function ProjectsSection() {
         }
       );
 
-      // Travel exactly one viewport per extra card — no trailing gap.
-      const getScrollLength = () =>
-        Math.max(0, stripRef.current.scrollWidth - stripRef.current.offsetWidth);
+      const mm = gsap.matchMedia();
 
-      gsap.to(stripRef.current, {
-        x: () => -getScrollLength(),
-        ease: "none",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          pin: true,
-          scrub: 1,
-          anticipatePin: 1,
-          start: "top top",
-          end: () => `+=${getScrollLength()}`,
-          invalidateOnRefresh: true,
-          onUpdate: (self) => {
-            const active = Math.round(self.progress * (PROJECTS.length - 1));
-            dotRefs.current.forEach((el, i) => {
-              if (!el) return;
-              el.style.opacity = i === active ? "1" : "0.35";
-              el.style.width = i === active ? "28px" : "8px";
-            });
+      // Horizontal pinned scroll only on laptop+ where the card layout is
+      // side-by-side. On mobile/tablet the section scrolls normally —
+      // pinning a stacked, image-heavy card creates a huge unusable scroll
+      // distance on small screens.
+      mm.add("(min-width: 1024px)", () => {
+        const getScrollLength = () =>
+          Math.max(0, stripRef.current.scrollWidth - stripRef.current.offsetWidth);
+
+        const st = gsap.to(stripRef.current, {
+          x: () => -getScrollLength(),
+          ease: "none",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            pin: true,
+            scrub: 1,
+            anticipatePin: 1,
+            start: "top top",
+            end: () => `+=${getScrollLength()}`,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              const active = Math.round(self.progress * (PROJECTS.length - 1));
+              dotRefs.current.forEach((el, i) => {
+                if (!el) return;
+                el.style.opacity = i === active ? "1" : "0.35";
+                el.style.width = i === active ? "28px" : "8px";
+              });
+            },
           },
-        },
+        });
+
+        return () => st.scrollTrigger && st.scrollTrigger.kill();
       });
+
+      return () => mm.revert();
     }, sectionRef);
 
     return () => ctx.revert();
   }, []);
 
   return (
-    <section id="projects" ref={sectionRef} style={styles.section}>
+    <section
+      id="projects"
+      ref={sectionRef}
+      style={{
+        ...styles.section,
+        height: isStacked ? "auto" : "100vh",
+        minHeight: isStacked ? "auto" : "100vh",
+      }}
+    >
       <span style={styles.chevronDecor} aria-hidden="true" />
 
       <div style={styles.heroHeading}>
@@ -162,18 +212,53 @@ export default function ProjectsSection() {
         </div>
       </div>
 
-      <div style={styles.stripWrap}>
-        <div ref={stripRef} style={styles.strip}>
+      <div
+        style={{
+          ...styles.stripWrap,
+          flex: isStacked ? "0 0 auto" : 1,
+          overflow: isStacked ? "visible" : "hidden",
+        }}
+      >
+        <div
+          ref={stripRef}
+          style={{
+            ...styles.strip,
+            flexDirection: isStacked ? "column" : "row",
+            height: isStacked ? "auto" : "110%",
+          }}
+        >
           {PROJECTS.map((project) => {
             const d = project.details;
             return (
-              <div key={project.name} style={styles.card}>
-                <div style={styles.cardImageWrap}>
+              <div
+                key={project.name}
+                style={{
+                  ...styles.card,
+                  flexDirection: isStacked ? "column" : "row",
+                  padding: isStacked ? "0 5vw" : "0 6vw",
+                  gap: isStacked ? "24px" : "clamp(24px, 4vw, 64px)",
+                  marginBottom: isStacked ? "48px" : 0,
+                }}
+              >
+                <div
+                  style={{
+                    ...styles.cardImageWrap,
+                    width: isStacked ? "100%" : "min(42vw, 620px)",
+                    height: isStacked ? "min(70vw, 420px)" : "min(60vh, 620px)",
+                  }}
+                >
                   <img src={project.image} alt={project.name} style={styles.cardImage} />
                   <div style={styles.imageGradient} />
                 </div>
 
-                <div style={styles.detailCard}>
+                <div
+                  style={{
+                    ...styles.detailCard,
+                    flex: isStacked ? "1 1 auto" : "0 1 440px",
+                    maxWidth: isStacked ? "100%" : "440px",
+                    width: "100%",
+                  }}
+                >
                   <div style={styles.detailTopRow}>
                     <div>
                       <span style={styles.projectTag}>{d.projectType}</span>
@@ -197,7 +282,13 @@ export default function ProjectsSection() {
                     <p style={styles.detailPrice}>₹{d.price}</p>
                   </div>
 
-                  <div style={styles.detailGrid}>
+                  <div
+                    style={{
+                      ...styles.detailGrid,
+                      gridTemplateColumns:
+                        bp === "mobile" ? "1fr 1fr" : "1fr 1fr",
+                    }}
+                  >
                     <div style={styles.detailItem}>
                       <span style={styles.detailIcon} aria-hidden="true">
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
@@ -305,11 +396,13 @@ export default function ProjectsSection() {
         </div>
       </div>
 
-      <div style={styles.progressRow}>
-        {PROJECTS.map((project, i) => (
-          <span key={project.name} ref={(el) => (dotRefs.current[i] = el)} style={styles.progressDot} />
-        ))}
-      </div>
+      {!isStacked && (
+        <div style={styles.progressRow}>
+          {PROJECTS.map((project, i) => (
+            <span key={project.name} ref={(el) => (dotRefs.current[i] = el)} style={styles.progressDot} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -317,7 +410,6 @@ export default function ProjectsSection() {
 const styles = {
   section: {
     position: "relative",
-    height: "100vh",
     width: "100%",
     maxWidth: "100%",
     overflow: "hidden",
@@ -329,8 +421,8 @@ const styles = {
     position: "absolute",
     top: "8%",
     right: 0,
-    width: "clamp(160px, 20vw, 300px)",
-    height: "clamp(160px, 20vw, 300px)",
+    width: "clamp(120px, 20vw, 300px)",
+    height: "clamp(120px, 20vw, 300px)",
     backgroundColor: "#eeece7",
     clipPath: CHEVRON_CLIP,
     pointerEvents: "none",
@@ -343,7 +435,7 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
     textAlign: "center",
-    padding: "min(0.5vw, 6px) 3vw min(0.5vw, 4px)",
+    padding: "clamp(16px, 3vw, 24px) 5vw clamp(12px, 2vw, 16px)",
     width: "100%",
     boxSizing: "border-box",
     flex: "0 0 auto",
@@ -352,13 +444,11 @@ const styles = {
     margin: "0 0 12px",
     overflow: "hidden",
   },
-
-  // ✅ HEADING FONT: Figtree Light
   headingLine: {
     display: "inline-block",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 500,
-    fontSize: "clamp(2.1rem, 7vw, 5.5rem)",
+    fontSize: "clamp(1.9rem, 7vw, 5.5rem)",
     letterSpacing: "-0.02em",
     color: "#141313",
     lineHeight: 1,
@@ -368,9 +458,9 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
-
-  // ✅ BODY FONT: Figtree Medium
   viewAllBtn: {
     display: "inline-flex",
     alignItems: "center",
@@ -379,12 +469,11 @@ const styles = {
     backgroundColor: "#f0eee9",
     color: "#141313",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "0.85rem",
+    fontSize: "clamp(0.78rem, 1.6vw, 0.85rem)",
     fontWeight: 500,
     textDecoration: "none",
     whiteSpace: "nowrap",
   },
-
   iconBtn: {
     display: "flex",
     alignItems: "center",
@@ -394,42 +483,37 @@ const styles = {
     borderRadius: "10px",
     backgroundColor: "#f0eee9",
     color: "#141313",
+    flexShrink: 0,
   },
   stripWrap: {
     position: "relative",
-    flex: 1,
     minHeight: 0,
     width: "100%",
     maxWidth: "100%",
-    overflow: "hidden",
-    paddingBottom: "min(4vw, 40px)",
+    paddingBottom: "clamp(24px, 4vw, 40px)",
     boxSizing: "border-box",
   },
   strip: {
     display: "flex",
     flexWrap: "nowrap",
-    height: "110%",
     width: "100%",
     willChange: "transform",
   },
-  // Full-width cards — one viewport per card, nothing peeking, no trailing gap.
   card: {
     position: "relative",
     flex: "0 0 100%",
     width: "100%",
+    maxWidth: "1600px",
+    margin: "0 auto",
     height: "auto",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "clamp(24px, 4vw, 64px)",
-    padding: "0 6vw",
     boxSizing: "border-box",
   },
   cardImageWrap: {
     position: "relative",
     flex: "0 0 auto",
-    width: "min(42vw, 620px)",
-    height: "min(60vh, 620px)",
     overflow: "hidden",
     backgroundColor: "#e8e4da",
     borderRadius: "4px",
@@ -448,8 +532,6 @@ const styles = {
   },
   detailCard: {
     position: "relative",
-    flex: "0 1 440px",
-    maxWidth: "440px",
     minWidth: 0,
     backgroundColor: "#ffffff",
     borderRadius: "4px",
@@ -464,39 +546,32 @@ const styles = {
     gap: "12px",
     marginBottom: "10px",
   },
-
-  // ✅ BODY FONT: Figtree Medium (uppercase)
   projectTag: {
     display: "inline-block",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "0.66rem",
+    fontSize: "clamp(0.62rem, 1.4vw, 0.66rem)",
     fontWeight: 500,
     letterSpacing: "0.1em",
     textTransform: "uppercase",
     color: "#8a8a86",
     marginBottom: "10px",
   },
-
-  // ✅ BODY FONT: Figtree Medium
   detailTitle: {
     margin: "0 0 4px",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 500,
-    fontSize: "0.95rem",
+    fontSize: "clamp(1rem, 2.2vw, 1.15rem)",
     color: "#141313",
     letterSpacing: "-0.01em",
   },
-
-  // ✅ BODY FONT: Figtree Regular
   detailAddress: {
     margin: 0,
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 400,
-    fontSize: "0.78rem",
+    fontSize: "clamp(0.75rem, 1.6vw, 0.8rem)",
     lineHeight: 1.5,
     color: "#8a8a86",
   },
-
   phoneBtn: {
     display: "flex",
     alignItems: "center",
@@ -510,36 +585,31 @@ const styles = {
   },
   priceRow: {
     display: "block",
-    paddingBottom: "24px",
+    paddingBottom: "clamp(16px, 3vw, 24px)",
     borderBottom: "1px solid rgba(20,19,19,0.15)",
   },
-
-  // ✅ BODY FONT: Figtree Regular
   priceLabel: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 400,
-    fontSize: "0.8rem",
+    fontSize: "clamp(0.75rem, 1.6vw, 0.8rem)",
     color: "#6b6b68",
   },
-
-  // ✅ BODY FONT: Figtree Bold (800 not available, using 700)
   detailPrice: {
     margin: "6px 0 0",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 700,
-    fontSize: "clamp(1.6rem, 2.6vw, 2.2rem)",
+    fontSize: "clamp(1.4rem, 3.5vw, 2.2rem)",
     color: "#141313",
     letterSpacing: "-0.03em",
     lineHeight: 1.1,
   },
-
   detailGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    rowGap: "18px",
+    rowGap: "clamp(14px, 2.5vw, 18px)",
     columnGap: "16px",
-    margin: "24px 0",
-    paddingBottom: "24px",
+    margin: "clamp(16px, 3vw, 24px) 0",
+    paddingBottom: "clamp(16px, 3vw, 24px)",
     borderBottom: "1px solid rgba(20,19,19,0.15)",
   },
   detailItem: {
@@ -556,31 +626,25 @@ const styles = {
     flex: "0 0 auto",
     marginTop: "2px",
   },
-
-  // ✅ BODY FONT: Figtree Regular
   detailLabel: {
     display: "block",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 400,
-    fontSize: "0.75rem",
+    fontSize: "clamp(0.7rem, 1.5vw, 0.75rem)",
     color: "#8a8a86",
     marginBottom: "2px",
   },
-
-  // ✅ BODY FONT: Figtree Medium
   detailValue: {
     display: "block",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 500,
-    fontSize: "0.9rem",
+    fontSize: "clamp(0.82rem, 1.8vw, 0.9rem)",
     color: "#141313",
+    wordBreak: "break-word",
   },
-
   countdownWrap: {
-    marginBottom: "24px",
+    marginBottom: "clamp(16px, 3vw, 24px)",
   },
-
-  // ✅ BODY FONT: Figtree Medium
   completionBanner: {
     display: "flex",
     alignItems: "center",
@@ -588,13 +652,13 @@ const styles = {
     gap: "12px",
     color: "#8a8a86",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "0.68rem",
+    fontSize: "clamp(0.62rem, 1.4vw, 0.68rem)",
     fontWeight: 500,
     letterSpacing: "0.06em",
     textTransform: "uppercase",
     padding: "0 0 12px",
+    flexWrap: "wrap",
   },
-
   countdownRow: {
     display: "flex",
     alignItems: "stretch",
@@ -607,41 +671,35 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    padding: "14px 4px",
+    padding: "clamp(10px, 2vw, 14px) 4px",
+    minWidth: 0,
   },
-
-  // ✅ BODY FONT: Figtree Bold
   countdownValue: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 700,
-    fontSize: "1.15rem",
+    fontSize: "clamp(0.95rem, 2.4vw, 1.15rem)",
     color: "#141313",
   },
-
-  // ✅ BODY FONT: Figtree Medium
   countdownUnit: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 500,
-    fontSize: "0.6rem",
+    fontSize: "clamp(0.55rem, 1.3vw, 0.6rem)",
     letterSpacing: "0.03em",
     color: "#8a8a86",
     marginTop: "3px",
     textTransform: "uppercase",
   },
-
   countdownDivider: {
     width: "1px",
     backgroundColor: "rgba(20,19,19,0.1)",
   },
-
-  // ✅ BODY FONT: Figtree Medium
   knowMoreBtn: {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     gap: "6px",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "0.8rem",
+    fontSize: "clamp(0.76rem, 1.6vw, 0.8rem)",
     fontWeight: 500,
     color: "#141313",
     textDecoration: "none",
@@ -649,8 +707,8 @@ const styles = {
     borderRadius: "999px",
     padding: "10px 18px",
     transition: "background-color 0.2s ease",
+    width: "fit-content",
   },
-
   knowMoreArrow: {
     display: "flex",
     alignItems: "center",

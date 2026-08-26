@@ -8,24 +8,24 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 const AMENITIES = [
   {
     index: "01",
-    title: "Safe & Secure Living",
-    description: "Gated community environments designed for peace of mind.",
+    title: "Prime Locations",
+    description: "Properties in well-connected, high-growth locations.",
   },
   {
     index: "02",
-    title: "Green Open Spaces",
-    description: "Beautiful surroundings that encourage healthier lifestyles.",
+    title: "Trusted Expertise",
+    description: "Experience and insight you can rely on.",
   },
   {
     index: "03",
-    title: "Utilities",
+    title: "Quality Developments",
     description:
-      "Quality roads, electricity, water connections, and planned development.",
+      "Thoughtfully designed spaces built for lasting value.",
   },
   {
     index: "04",
-    title: "Swimming Pool",
-    description: "Refreshing pool designed for relaxation and recreation.",
+    title: "Complete Transparency",
+    description: "Clear processes, honest guidance, and no surprises.",
   },
   // {
   //   index: "05",
@@ -34,23 +34,23 @@ const AMENITIES = [
   // },
   {
     index: "06",
-    title: "Gymnasium",
-    description: "State-of-the-art fitness center with modern equipment.",
+    title: "Future Appreciation",
+    description: "Properties selected for strong growth potential.",
   },
   {
     index: "07",
-    title: "Children's Play Area",
-    description: "Safe and fun playground for children of all ages.",
+    title: "Customer First",
+    description: "Personalized support from enquiry to ownership.",
   },
   {
     index: "08",
-    title: "Landscaped Gardens",
-    description: "Beautifully designed gardens for peaceful walks and relaxation.",
+    title: "Premium Living",
+    description: "Modern spaces designed for comfort and lifestyle.",
   },
   {
     index: "09",
-    title: "24/7 Security",
-    description: "Round-the-clock security with CCTV surveillance and guards.",
+    title: "Lasting Trust",
+    description: "Building relationships beyond the property purchase.",
   },
 ];
 
@@ -104,12 +104,12 @@ export default function AmenitiesSection() {
       <span style={styles.chevronDecor} aria-hidden="true" />
 
       <div style={styles.heroHeading} className="pkr-amenities__head">
-        <h2 style={styles.headingMask}>
+        {/* <h2 style={styles.headingMask}>
           <span ref={headingLineRef} style={styles.headingLine}>
             Amenities
           </span>
-        </h2>
-        <div data-reveal style={styles.topBarRight}>
+        </h2> */}
+        {/* <div data-reveal style={styles.topBarRight}>
           <Link href="/contact-us" style={styles.viewAllBtn}>
             View all
           </Link>
@@ -123,7 +123,7 @@ export default function AmenitiesSection() {
               />
             </svg>
           </span>
-        </div>
+        </div> */}
       </div>
 
       <div style={styles.grid} className="pkr-amenities__grid">

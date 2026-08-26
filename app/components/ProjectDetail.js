@@ -423,7 +423,7 @@ export default function ProjectDetail({
           color: #ffffff;
         }
         .pd-lm-nav-btn:active:not(:disabled) { transform: scale(0.94); }
-        .pd-lm-view-all:hover { background-color: #f4633a; }
+        .pd-lm-view-all:hover { background-color: #0851a2; }
 
         @media (max-width: 720px) {
           .pd-showcase { flex-direction: column !important; }
@@ -817,7 +817,7 @@ const styles = {
     textTransform: "uppercase",
     color: "rgba(20, 19, 19, 0.5)",
   },
-  heroMetaBar: { display: "block", width: "1.8em", height: "3px", backgroundColor: "#f4633a" },
+  heroMetaBar: { display: "block", width: "1.8em", height: "3px", backgroundColor: "#0851a2" },
   heroMetaIndex: {
     fontFamily: "'Courier New', 'Consolas', monospace",
     fontSize: "0.85rem",
@@ -880,7 +880,7 @@ const styles = {
     height: "4px",
     width: "8px",
     borderRadius: "2px",
-    backgroundColor: "#f4633a",
+    backgroundColor: "#0851a2",
     opacity: 0.35,
     transition: "width 0.3s ease, opacity 0.3s ease",
   },
@@ -979,7 +979,7 @@ const styles = {
     fontFamily: "'Figtree', var(--font-figtree), 'Segoe UI', Arial, sans-serif",
     fontWeight: 700,
     fontSize: "clamp(1.1rem, 1.6vw, 1.35rem)",
-    color: "#f4633a",
+    color: "#0851a2",
     letterSpacing: "-0.01em",
   },
   statSub: {
@@ -996,7 +996,7 @@ const styles = {
     padding: "0.95em 1.7em",
     borderRadius: "999px",
     border: "none",
-    backgroundColor: "#f4633a",
+    backgroundColor: "#0851a2",
     color: "#ffffff",
     fontFamily: "'Figtree', var(--font-figtree), 'Segoe UI', Arial, sans-serif",
     fontWeight: 600,
@@ -1085,8 +1085,8 @@ const styles = {
     fontSize: "0.68rem",
     fontWeight: 700,
     letterSpacing: "0.04em",
-    color: "#ffffff",
-    backgroundColor: "#f4633a",
+    color: "#050505",
+    backgroundColor: "#ffffff",
     borderRadius: "999px",
     padding: "6px 12px",
     whiteSpace: "nowrap",
@@ -1114,7 +1114,7 @@ const styles = {
     width: "5px",
     height: "5px",
     borderRadius: "50%",
-    backgroundColor: "#f4633a",
+    backgroundColor: "#ffffff",
     flex: "0 0 auto",
   },
 
@@ -1323,14 +1323,14 @@ const styles = {
     position: "absolute",
     inset: 0,
     borderRadius: "50%",
-    backgroundColor: "#f4633a",
+    backgroundColor: "#0851a2",
   },
   mapPinDot: {
     position: "relative",
     width: "16px",
     height: "16px",
     borderRadius: "50%",
-    backgroundColor: "#f4633a",
+    backgroundColor: "#0851a2",
     border: "3px solid #ffffff",
     boxShadow: "0 4px 14px rgba(0,0,0,0.2)",
   },
@@ -1412,7 +1412,7 @@ const styles = {
     padding: "0.95em 1.7em",
     borderRadius: "999px",
     border: "none",
-    backgroundColor: "#f4633a",
+    backgroundColor: "#0851a2",
     color: "#ffffff",
     fontFamily: "'Figtree', var(--font-figtree), 'Segoe UI', Arial, sans-serif",
     fontWeight: 600,
@@ -1461,7 +1461,7 @@ const styles = {
     display: "inline-block",
     width: "6px",
     height: "6px",
-    backgroundColor: "#f4633a",
+    backgroundColor: "#0851a2",
     transform: "rotate(45deg)",
   },
   lmHeading: {
@@ -1550,7 +1550,7 @@ const styles = {
     fontWeight: 700,
     letterSpacing: "0.06em",
     textTransform: "uppercase",
-    color: "#f4633a",
+    color: "#0851a2",
     backgroundColor: "rgba(244,99,58,0.1)",
     borderRadius: "999px",
     padding: "5px 12px",

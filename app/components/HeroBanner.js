@@ -13,7 +13,7 @@ const SCRUB_HEIGHT_VH = 400;
 const MAX_UPSCALE = 1.75;
 
 // ---- Global font stack ----
-const FONT_STACK = '"Figtree", "Figtree Placeholder", sans-serif';
+const FONT_STACK = "var(--font-jakarta)";
 
 export default function HeroBanner() {
   const canvasRef = useRef(null);
@@ -311,10 +311,10 @@ export default function HeroBanner() {
       {/* PHASE 1 & 2 & 3: Emerging & Splitting "PKR ESTATES" with gap */}
       <div ref={arriveWrapRef} style={styles.arriveContainer}>
         <span ref={arriveLeftRef} style={styles.arriveHalfLeft}>
-          PKR
+          UNVEILING PKR'S ESTATES
         </span>
         <span ref={arriveRightRef} style={styles.arriveHalfRight}>
-          ESTATES
+         GURUDEV
         </span>
       </div>
 
@@ -430,7 +430,7 @@ const styles = {
 
   arriveHalfLeft: {
     fontFamily: FONT_STACK,
-    fontSize: "clamp(2.2rem, 7vw, 8.5rem)",
+    fontSize: "clamp(1rem, 3vw, 3rem)",
     fontWeight: 500,
     letterSpacing: "clamp(0.01em, 0.02em, 0.04em)",
     color: "#fcfbf9",
@@ -439,13 +439,13 @@ const styles = {
     textShadow: "0 4px 30px rgba(0, 0, 0, 0.55)",
     willChange: "transform, opacity, filter",
     border: "none",
-    lineHeight: 1.1,
+    lineHeight: 0.2,
   },
 
   arriveHalfRight: {
     fontFamily: FONT_STACK,
     fontSize: "clamp(2.2rem, 7vw, 8.5rem)",
-    fontWeight: 500,
+    fontWeight: 700,
     letterSpacing: "clamp(0.01em, 0.02em, 0.04em)",
     color: "#fcfbf9",
     textTransform: "uppercase",
@@ -453,7 +453,7 @@ const styles = {
     textShadow: "0 4px 30px rgba(0, 0, 0, 0.55)",
     willChange: "transform, opacity, filter",
     border: "none",
-    lineHeight: 1.1,
+    lineHeight: 0.9,
   },
 
   phraseContainer: {

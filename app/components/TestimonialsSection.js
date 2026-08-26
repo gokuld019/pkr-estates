@@ -46,24 +46,30 @@ const TESTIMONIALS = [
   },
 ];
 
-// Breakpoints (px)
+// Breakpoints (px) — mobile / tablet / laptop / desktop / big
 const BP = {
-  mobile: 640,   // < 640  -> 1 card
-  tablet: 1024,  // < 1024 -> 2 cards
-  laptop: 1440,  // < 1440 -> 3 cards
-  // >= 1440 (big/desktop) -> 3 cards, wider gutters
+  mobile: 480,
+  tablet: 768,
+  laptop: 1024,
+  desktop: 1440,
+  big: 1920,
 };
 
 function getCardsVisible(width) {
   if (width < BP.mobile) return 1;
-  if (width < BP.tablet) return 2;
-  return 3;
+  if (width < BP.tablet) return 1;
+  if (width < BP.laptop) return 2;
+  if (width < BP.desktop) return 3;
+  if (width < BP.big) return 3;
+  return 4; // big screens get an extra card so cards don't stretch too wide
 }
 
 function getGap(width) {
-  if (width < BP.mobile) return 14;
-  if (width < BP.tablet) return 18;
-  return 24;
+  if (width < BP.mobile) return 12;
+  if (width < BP.tablet) return 16;
+  if (width < BP.laptop) return 18;
+  if (width < BP.desktop) return 22;
+  return 26;
 }
 
 export default function TestimonialsSection() {
@@ -179,7 +185,7 @@ export default function TestimonialsSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, cardWidth]);
 
-  // --- touch swipe handlers (mobile) ---
+  // --- touch swipe handlers (mobile + tablet) ---
   const handleTouchStart = (e) => {
     isDragging.current = true;
     touchStartX.current = e.touches[0].clientX;
@@ -214,7 +220,8 @@ export default function TestimonialsSection() {
   const progressPct =
     maxIndex === 0 ? 100 : ((index + cardsVisible) / TESTIMONIALS.length) * 100;
 
-  const isMobile = viewportWidth < BP.mobile;
+  // enable touch/swipe on any coarse-pointer-ish width, not just <480
+  const isTouchLayout = viewportWidth < BP.laptop;
 
   return (
     <section
@@ -251,9 +258,9 @@ export default function TestimonialsSection() {
           <div
             ref={trackRef}
             style={{ ...styles.track, gap: `${gap}px` }}
-            onTouchStart={isMobile ? handleTouchStart : undefined}
-            onTouchMove={isMobile ? handleTouchMove : undefined}
-            onTouchEnd={isMobile ? handleTouchEnd : undefined}
+            onTouchStart={isTouchLayout ? handleTouchStart : undefined}
+            onTouchMove={isTouchLayout ? handleTouchMove : undefined}
+            onTouchEnd={isTouchLayout ? handleTouchEnd : undefined}
           >
             {TESTIMONIALS.map((t, i) => (
               <div
@@ -355,7 +362,7 @@ export default function TestimonialsSection() {
 const styles = {
   section: {
     position: "relative",
-    minHeight: "100dvh",
+    
     display: "flex",
     alignItems: "center",
     padding: "clamp(2.5em, 8vw, 6em) clamp(1rem, 4vw, 4vw)",
@@ -364,7 +371,7 @@ const styles = {
   },
   inner: {
     width: "100%",
-    maxWidth: "1500px",
+    maxWidth: "1800px",
     margin: "0 auto",
   },
   heroHeading: {
@@ -380,7 +387,6 @@ const styles = {
     boxSizing: "border-box",
   },
 
-  // ✅ BODY FONT: Figtree Regular
   subtitle: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontSize: "0.9rem",
@@ -393,15 +399,14 @@ const styles = {
     margin: "0",
     overflow: "hidden",
     flex: "1 1 auto",
-    minWidth: "200px",
+    minWidth: "160px",
   },
 
-  // ✅ HEADING FONT: Figtree Light
   headingLine: {
     display: "inline-block",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 500,
-    fontSize: "clamp(2rem, 7vw, 5.5rem)",
+    fontSize: "clamp(1.8rem, 7vw, 5.5rem)",
     letterSpacing: "-0.02em",
     color: "#101010",
     lineHeight: 1,
@@ -413,9 +418,10 @@ const styles = {
     alignItems: "center",
     gap: "10px",
     flex: "0 0 auto",
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
 
-  // ✅ BODY FONT: Figtree Medium
   viewAllBtn: {
     display: "inline-flex",
     alignItems: "center",
@@ -424,7 +430,7 @@ const styles = {
     backgroundColor: "#ffffff",
     color: "#101010",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "clamp(0.78rem, 1.3vw, 0.85rem)",
+    fontSize: "clamp(0.75rem, 1.3vw, 0.85rem)",
     fontWeight: 500,
     textDecoration: "none",
     whiteSpace: "nowrap",
@@ -434,8 +440,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "clamp(34px, 5vw, 38px)",
-    height: "clamp(34px, 5vw, 38px)",
+    width: "clamp(32px, 5vw, 38px)",
+    height: "clamp(32px, 5vw, 38px)",
     borderRadius: "10px",
     backgroundColor: "#ffffff",
     color: "#101010",
@@ -453,11 +459,11 @@ const styles = {
   },
   card: {
     position: "relative",
-    minWidth: "240px",
-    minHeight: "clamp(19em, 26vw, 22em)",
+    minWidth: "0",
+    minHeight: "clamp(17em, 26vw, 22em)",
     backgroundColor: "#ffffff",
     borderRadius: "1.25em",
-    padding: "clamp(1.5em, 4vw, 2.4em) clamp(1.3em, 3.5vw, 2.2em)",
+    padding: "clamp(1.3em, 4vw, 2.4em) clamp(1.1em, 3.5vw, 2.2em)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
@@ -485,28 +491,25 @@ const styles = {
     zIndex: 1,
   },
 
-  // ✅ BODY FONT: Figtree Medium
   cardName: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "clamp(0.88rem, 2vw, 0.95rem)",
+    fontSize: "clamp(0.85rem, 2vw, 0.95rem)",
     fontWeight: 500,
     color: "#131313",
     letterSpacing: "0.01em",
   },
 
-  // ✅ HEADING FONT: Figtree Light (for quote marks)
   cardQuoteMark: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 300,
-    fontSize: "clamp(1.6rem, 3.5vw, 2rem)",
+    fontSize: "clamp(1.4rem, 3.5vw, 2rem)",
     lineHeight: 1,
     color: "rgba(19,19,19,0.85)",
   },
 
-  // ✅ BODY FONT: Figtree Regular (italic)
   cardQuote: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "clamp(0.95rem, 2vw, 1.08rem)",
+    fontSize: "clamp(0.88rem, 2vw, 1.08rem)",
     fontStyle: "italic",
     fontWeight: 400,
     lineHeight: 1.6,
@@ -516,14 +519,13 @@ const styles = {
     zIndex: 1,
   },
 
-  // ✅ BODY FONT: Figtree Regular
   cardBottom: {
     display: "flex",
     alignItems: "center",
     flexWrap: "wrap",
     gap: "0.55em",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "clamp(0.78rem, 1.8vw, 0.85rem)",
+    fontSize: "clamp(0.74rem, 1.8vw, 0.85rem)",
     fontWeight: 400,
     color: "rgba(19,19,19,0.6)",
     position: "relative",
@@ -536,7 +538,6 @@ const styles = {
     letterSpacing: "0.03em",
   },
 
-  // ✅ BODY FONT: Figtree Medium
   cardRating: {
     color: "#131313",
     fontWeight: 500,
@@ -551,11 +552,11 @@ const styles = {
     display: "flex",
     flexWrap: "wrap",
     alignItems: "center",
-    gap: "clamp(16px, 4vw, 28px)",
-    marginTop: "clamp(2em, 5vw, 3.2em)",
+    gap: "clamp(14px, 4vw, 28px)",
+    marginTop: "clamp(1.6em, 5vw, 3.2em)",
   },
   progressTrack: {
-    flex: "1 1 140px",
+    flex: "1 1 120px",
     height: "2px",
     backgroundColor: "rgba(19,19,19,0.13)",
     position: "relative",
@@ -577,8 +578,8 @@ const styles = {
     flex: "0 0 auto",
   },
   navBtn: {
-    width: "clamp(42px, 8vw, 50px)",
-    height: "clamp(42px, 8vw, 50px)",
+    width: "clamp(38px, 8vw, 50px)",
+    height: "clamp(38px, 8vw, 50px)",
     borderRadius: "50%",
     border: "none",
     display: "flex",

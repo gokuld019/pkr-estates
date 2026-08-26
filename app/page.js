@@ -1,9 +1,9 @@
 import HeroBanner from "./components/HeroBanner";
 import GallerySection from "./components/GallerySection";
 import AboutSection from "./components/AboutSection";
-import ManifestoSection from "./components/ManifestoSection";
+// import ManifestoSection from "./components/ManifestoSection";
 import WhyChooseSection from "./components/WhyChooseSection";
-import AmenitiesSection from "./components/AmenitiesSection";
+// import AmenitiesSection from "./components/AmenitiesSection";
 import ProjectsSection from "./components/ProjectsSection";
 import CompletedProjectsSection from "./components/CompletedProjectsSection";
 import TestimonialsSection from "./components/TestimonialsSection";
@@ -17,9 +17,9 @@ export default function Home() {
     >
       <HeroBanner />
       <AboutSection />
-      <ManifestoSection />
+      {/* <ManifestoSection /> */}
       <WhyChooseSection />
-      <AmenitiesSection />
+      {/* <AmenitiesSection /> */}
       <ProjectsSection />
       <TestimonialsSection />
       <CompletedProjectsSection />

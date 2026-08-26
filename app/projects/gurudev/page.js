@@ -4,7 +4,7 @@ import ProjectDetail from "../../components/ProjectDetail";
 export default function GurudevPage() {
   return (
     <ProjectDetail
-      name="Gurudev"
+      name="GURUDEV"
       tagline="A RESIDENCE BUILT ON QUIET DETAIL AND LASTING MATERIAL."
       index="01"
       category="Residential"

@@ -4,75 +4,162 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-const DASH_COUNT = 48;
-const DASHES = Array.from({ length: DASH_COUNT });
+const CHEVRON_IMAGES = [
+  "/hero-frames/frame_0012.webp",
+  "/hero-frames/frame_0030.webp",
+  "/hero-frames/frame_0052.webp",
+  "/hero-frames/frame_0078.webp",
+];
+
+const CHEVRON_CLIP =
+  "polygon(0% 0%, 55% 0%, 100% 50%, 55% 100%, 0% 100%, 40% 50%)";
+
+const PARALLAX_SPEEDS = [-1, 0.6, -0.5, 1];
 
 export default function AboutSection() {
   const sectionRef = useRef(null);
   const headingLineRef = useRef(null);
   const statementRef = useRef(null);
-  const cardRef = useRef(null);
-  const sunburstRef = useRef(null);
+  const ribbonWrapRef = useRef(null);
+  const chevronRefs = useRef([]);
+  const imageRefs = useRef([]);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
+
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        headingLineRef.current,
-        { yPercent: 110 },
-        {
-          yPercent: 0,
-          duration: 0.9,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: "top 78%",
-            once: true,
-          },
-        }
-      );
+      const mm = gsap.matchMedia();
 
-      gsap.fromTo(
-        statementRef.current,
-        { opacity: 0, y: 24 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: "top 75%",
-            once: true,
-          },
-        }
-      );
-
-      gsap.fromTo(
-        cardRef.current,
-        { opacity: 0, scale: 0.92 },
-        {
-          opacity: 1,
-          scale: 1,
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: cardRef.current,
-            start: "top 85%",
-            once: true,
-          },
-        }
-      );
-
-      gsap.to(sunburstRef.current, {
-        rotate: 360,
-        duration: 70,
-        repeat: -1,
-        ease: "none",
+      /* ---------- reduced motion: no animation, everything visible ---------- */
+      mm.add("(prefers-reduced-motion: reduce)", () => {
+        gsap.set(
+          [
+            headingLineRef.current,
+            statementRef.current,
+            ...chevronRefs.current.filter(Boolean),
+          ],
+          { clearProps: "all", opacity: 1, y: 0, yPercent: 0, scale: 1 }
+        );
       });
+
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap.fromTo(
+          headingLineRef.current,
+          { yPercent: 110 },
+          {
+            yPercent: 0,
+            duration: 0.9,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: "top 78%",
+              once: true,
+            },
+          }
+        );
+
+        gsap.fromTo(
+          statementRef.current,
+          { opacity: 0, y: 24 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: "top 75%",
+              once: true,
+            },
+          }
+        );
+      });
+
+      /* ---------- breakpoint-aware parallax ---------- */
+      mm.add(
+        {
+          isPhone: "(max-width: 599px)",
+          isTablet: "(min-width: 600px) and (max-width: 1023px)",
+          isLaptop: "(min-width: 1024px) and (max-width: 1599px)",
+          isDesktop: "(min-width: 1600px)",
+          reduce: "(prefers-reduced-motion: reduce)",
+        },
+        (context) => {
+          const { isPhone, isTablet, isLaptop, reduce } = context.conditions;
+
+          if (!reduce) {
+            gsap.fromTo(
+              chevronRefs.current.filter(Boolean),
+              { opacity: 0, scale: 0.85, filter: "blur(6px)" },
+              {
+                opacity: 1,
+                scale: 1,
+                filter: "blur(0px)",
+                duration: 1,
+                ease: "power3.out",
+                stagger: 0.12,
+                scrollTrigger: {
+                  trigger: sectionRef.current,
+                  start: "top 68%",
+                  once: true,
+                },
+              }
+            );
+          }
+
+          const parallaxScale = reduce
+            ? 0
+            : isPhone
+            ? 0.3
+            : isTablet
+            ? 0.55
+            : isLaptop
+            ? 0.85
+            : 1;
+
+          imageRefs.current.filter(Boolean).forEach((img, i) => {
+            const speed = PARALLAX_SPEEDS[i % PARALLAX_SPEEDS.length];
+            gsap.to(img, {
+              yPercent: 18 * speed * parallaxScale,
+              ease: "none",
+              scrollTrigger: {
+                trigger: sectionRef.current,
+                start: "top bottom",
+                end: "bottom top",
+                scrub: 0.6,
+              },
+            });
+          });
+
+          if (!reduce) {
+            gsap.fromTo(
+              ribbonWrapRef.current,
+              { x: 0, opacity: 1 },
+              {
+                x: isPhone ? "6vw" : isTablet ? "12vw" : "18vw",
+                opacity: 0,
+                ease: "none",
+                scrollTrigger: {
+                  trigger: sectionRef.current,
+                  start: "center 80%",
+                  end: "bottom top",
+                  scrub: 0.6,
+                },
+              }
+            );
+          }
+        }
+      );
     }, sectionRef);
 
-    return () => ctx.revert();
+    /* refresh on orientation change / mobile URL-bar resize */
+    const onResize = () => ScrollTrigger.refresh();
+    window.addEventListener("orientationchange", onResize);
+
+    return () => {
+      window.removeEventListener("orientationchange", onResize);
+      ctx.revert();
+    };
   }, []);
 
   return (
@@ -81,101 +168,75 @@ export default function AboutSection() {
 
       <div className="about-grid-overlay" />
 
-      <div className="about-hero-heading">
-        <h2 className="about-heading-mask">
-          <span ref={headingLineRef} className="about-heading-line">
-            About Us
-          </span>
-        </h2>
-        <div data-fade className="about-top-bar-right">
-          <a href="#" className="about-view-all-btn">
-            View all
-          </a>
-          <span className="about-icon-btn" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <div className="about-inner">
+        <div className="about-hero-heading">
+          <h2 className="about-heading-mask">
+            <span ref={headingLineRef} className="about-heading-line">
+              About Us
+            </span>
+          </h2>
+        </div>
+
+        <p ref={statementRef} className="about-statement">
+          PKR Estate is a builder-led studio shaping homes around light,
+          material, and the small rituals of daily life. Every plan you see
+          began as a decision made by hand, long before it became a blueprint.
+          This isn&rsquo;t just about real estate — it&rsquo;s about belonging,
+          comfort, a place that&rsquo;s yours. You&rsquo;re not just looking
+          for an apartment. You&rsquo;re looking for a home that fits, and
+          that&rsquo;s what we help you find.
+        </p>
+
+        <div className="about-card-stage">
+          <div ref={ribbonWrapRef} className="about-ribbon-wrap">
+            {CHEVRON_IMAGES.map((src, i) => (
+              <div
+                key={src}
+                ref={(el) => (chevronRefs.current[i] = el)}
+                className="about-chevron"
+                style={{
+                  marginLeft: i === 0 ? 0 : "var(--chevron-overlap)",
+                  zIndex: CHEVRON_IMAGES.length - i,
+                }}
+              >
+                <img
+                  ref={(el) => (imageRefs.current[i] = el)}
+                  src={src}
+                  alt=""
+                  className="about-chevron-image"
+                  draggable={false}
+                  loading="lazy"
+                  decoding="async"
+                  sizes="(max-width: 599px) 30vw, (max-width: 1023px) 24vw, 320px"
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="about-annotation">
+            <svg
+              viewBox="0 0 72 60"
+              className="about-annotation-arrow"
+              aria-hidden="true"
+            >
               <path
-                d="M12 3v18M3 12h18"
-                stroke="currentColor"
-                strokeWidth="1.6"
+                d="M62 8 C 42 8, 20 20, 12 45"
+                stroke="#ff5a3c"
+                strokeWidth="2"
+                fill="none"
                 strokeLinecap="round"
               />
-            </svg>
-          </span>
-        </div>
-      </div>
-
-      <p ref={statementRef} className="about-statement">
-        PKR Estate is a builder-led studio shaping homes around light,
-        material, and the small rituals of daily life. Every plan you see
-        began as a decision made by hand, long before it became a blueprint.
-      </p>
-
-      <div className="about-card-stage">
-        <span className="about-ghost-text about-ghost-left">Play</span>
-        <span className="about-ghost-text about-ghost-right">Reel</span>
-
-        <svg
-          ref={sunburstRef}
-          className="about-sunburst"
-          viewBox="-100 -100 200 200"
-        >
-          {DASHES.map((_, i) => {
-            const round = (n) => Math.round(n * 1000) / 1000;
-            const angle = (i / DASH_COUNT) * Math.PI * 2;
-            const r1 = 62;
-            const r2 = 80;
-            return (
-              <line
-                key={i}
-                x1={round(Math.cos(angle) * r1)}
-                y1={round(Math.sin(angle) * r1)}
-                x2={round(Math.cos(angle) * r2)}
-                y2={round(Math.sin(angle) * r2)}
-                stroke="rgba(20,18,16,0.14)"
-                strokeWidth="1.4"
+              <path
+                d="M4 37 L12 45 L19 35"
+                stroke="#ff5a3c"
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
-            );
-          })}
-        </svg>
-
-        <div ref={cardRef} className="about-video-card">
-          <img
-            src="/About.png"
-            alt="PKR Estate walkthrough preview"
-            className="about-video-image"
-          />
-          <div className="about-video-overlay" />
-          <div className="about-video-top-row">
-            <span className="about-video-eyebrow">by</span>
-            <span className="about-video-label">PKR Estate</span>
+            </svg>
+            <span className="about-annotation-text">Take a look inside!</span>
           </div>
-          <span className="about-video-time">00:48</span>
-        </div>
-
-        <div className="about-annotation">
-          <svg
-            width="72"
-            height="60"
-            viewBox="0 0 72 60"
-            className="about-annotation-arrow"
-          >
-            <path
-              d="M62 8 C 42 8, 20 20, 12 45"
-              stroke="#ff5a3c"
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M4 37 L12 45 L19 35"
-              stroke="#ff5a3c"
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span className="about-annotation-text">Take a look inside!</span>
         </div>
       </div>
     </section>
@@ -184,25 +245,40 @@ export default function AboutSection() {
 
 const css = `
 /* =========================================================
-   FONT — Figtree (single family for headings + body)
+   ABOUT — fluid across phone → tablet → laptop → desktop → 4K
    ========================================================= */
 
-/* =========================================================
-   BASE (fluid, fills gaps between breakpoints via clamp)
-   ========================================================= */
 .about-section {
   position: relative;
   background-color: #f4f4f2;
-  padding: 0 6vw 160px;
+  padding: 0 clamp(16px, 5vw, 96px) clamp(56px, 1vw, 200px);
   overflow: hidden;
+  box-sizing: border-box;
 
   --font-heading: "Figtree", "Figtree Placeholder", sans-serif;
   --font-body: "Figtree", "Figtree Placeholder", sans-serif;
+
+  /* chevron sizing tokens */
+  --chevron-h: clamp(132px, 26vw, 420px);
+  --chevron-max-w: clamp(120px, 22vw, 320px);
+  --chevron-overlap: clamp(-52px, -5vw, -18px);
+
+  --stage-min-h: clamp(240px, 40vw, 560px);
 }
 
 .about-section,
 .about-section * {
   font-family: "Figtree", "Figtree Placeholder", sans-serif;
+  box-sizing: border-box;
+}
+
+/* content wrapper — stops everything stretching on ultrawide */
+.about-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
 }
 
 .about-grid-overlay {
@@ -212,10 +288,12 @@ const css = `
     linear-gradient(rgba(20,18,16,0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(20,18,16,0.06) 1px, transparent 1px);
   background-size: 50% 100%, 100% 1px;
-  background-position: center top, center 522px;
+  background-position: center top, center clamp(300px, 42vw, 560px);
   background-repeat: no-repeat;
   pointer-events: none;
 }
+
+/* ---------------- heading ---------------- */
 
 .about-hero-heading {
   position: relative;
@@ -224,176 +302,95 @@ const css = `
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 96px 0 56px;
+  padding: clamp(40px, 9vw, 70px) 0 clamp(18px, 4.5vw, 1px);
   width: 100%;
-  box-sizing: border-box;
 }
 
 .about-heading-mask {
-  margin: 0 0 20px;
+  margin: 0 0 clamp(8px, 1.6vw, 24px);
   overflow: hidden;
+  padding-bottom: 0.08em;   /* stops descender clipping in the mask */
 }
 
 .about-heading-line {
   display: inline-block;
   font-family: var(--font-heading);
-  font-size: clamp(2rem, 8vw, 6.5rem);
+  font-size: clamp(2.25rem, 7.5vw, 7rem);
   font-weight: 500;
   letter-spacing: -0.03em;
   color: #151414;
-  line-height: 1;
-  text-transform: none;
+  line-height: 1.02;
+  text-wrap: balance;
 }
 
-.about-top-bar-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.about-view-all-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.7em 1.3em;
-  border-radius: 999px;
-  background-color: #ffffff;
-  color: #151414;
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-weight: 500;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.about-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background-color: #ffffff;
-  color: #151414;
-  flex-shrink: 0;
-}
+/* ---------------- statement ---------------- */
 
 .about-statement {
   position: relative;
   z-index: 1;
-  margin: 0 auto 80px;
-  max-width: 1040px;
+  margin: 0 auto clamp(30px, 8vw, 104px);
+  max-width: min(72ch, 1040px);
   text-align: center;
   font-family: var(--font-body);
   font-weight: 400;
-  font-size: clamp(0.95rem, 1.8vw, 1.8rem);
-  line-height: 1.5;
+  font-size: clamp(1rem, 1.35vw + 0.6rem, 1.65rem);
+  line-height: 1.55;
   letter-spacing: -0.01em;
   color: #151414;
-  padding: 0;
+  text-wrap: pretty;
 }
+
+/* ---------------- chevron stage ---------------- */
 
 .about-card-stage {
   position: relative;
   z-index: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 500px;
-  padding: 0;
+  gap: clamp(18px, 4vw, 56px);
+  min-height: var(--stage-min-h);
 }
 
-.about-ghost-text {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  font-family: var(--font-heading);
-  font-weight: 600;
-  font-size: clamp(1.8rem, 6vw, 7rem);
-  letter-spacing: -0.03em;
-  color: rgba(20,18,16,0.09);
-  white-space: nowrap;
-  user-select: none;
-  pointer-events: none;
-}
-
-.about-ghost-left { left: clamp(10px, 15vw, 200px); }
-.about-ghost-right { right: clamp(10px, 15vw, 200px); }
-
-.about-sunburst {
-  position: absolute;
-  width: clamp(200px, 40vw, 520px);
-  height: clamp(200px, 40vw, 520px);
-  pointer-events: none;
-}
-
-.about-video-card {
-  position: relative;
-  z-index: 2;
-  width: 700px;
-  max-width: 90vw;
-  aspect-ratio: 340 / 210;
-  border-radius: 15px;
-  overflow: hidden;
-  background-color: #8f8f8f;
-  padding: 12px 16px;
+.about-ribbon-wrap {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  max-width: 1240px;
+  will-change: transform, opacity;
 }
 
-.about-video-image {
+.about-chevron {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: var(--chevron-max-w);
+  height: var(--chevron-h);
+  clip-path: ${CHEVRON_CLIP};
+  overflow: hidden;
+  will-change: transform, opacity, filter;
+  background: #e6e4e0;   /* placeholder while images load */
+}
+
+.about-chevron-image {
   position: absolute;
-  inset: 0;
+  top: -20%;
+  left: 0;
   width: 100%;
-  height: 100%;
+  height: 140%;
   object-fit: cover;
   display: block;
+  pointer-events: none;
+  will-change: transform;
+  user-select: none;
 }
 
-.about-video-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.55) 100%);
-}
-
-.about-video-top-row {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.about-video-eyebrow {
-  font-family: var(--font-body);
-  font-size: 0.6rem;
-  font-weight: 400;
-  color: rgba(255,255,255,0.7);
-}
-
-.about-video-label {
-  font-family: var(--font-heading);
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: #ffffff;
-}
-
-.about-video-time {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  z-index: 1;
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: #ffffff;
-}
+/* ---------------- annotation ---------------- */
 
 .about-annotation {
-  position: absolute;
-  bottom: -18%;
-  right: 0%;
+  position: relative;
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -403,15 +400,15 @@ const css = `
 
 .about-annotation-arrow {
   display: block;
-  width: 72px;
-  height: 60px;
+  width: clamp(46px, 5vw, 84px);
+  height: auto;
 }
 
 .about-annotation-text {
   margin-top: -4px;
   font-family: var(--font-script), "Caveat", cursive !important;
   font-weight: 600;
-  font-size: 1.5rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.75rem);
   color: #ff5a3c;
   white-space: nowrap;
 }
@@ -420,110 +417,115 @@ const css = `
    BREAKPOINTS
    ========================================================= */
 
-/* Small mobile: 0 - 380px */
-@media (max-width: 380px) {
-  .about-section { padding: 0 5vw 90px; }
-  .about-hero-heading { padding: 56px 0 24px; }
-  .about-heading-line { font-size: 1.7rem; }
-  .about-view-all-btn { font-size: 0.6rem; padding: 0.35em 0.8em; }
-  .about-icon-btn { width: 26px; height: 26px; }
-  .about-icon-btn svg { width: 11px; height: 11px; }
-  .about-statement { font-size: 0.85rem; margin-bottom: 40px; }
-  .about-card-stage { min-height: 200px; }
-  .about-ghost-text { font-size: 1.4rem; }
-  .about-ghost-left { left: 6px; }
-  .about-ghost-right { right: 6px; }
-  .about-video-card { width: 92vw; padding: 8px 10px; }
-  .about-video-label { font-size: 0.68rem; }
-  .about-video-eyebrow { font-size: 0.4rem; }
-  .about-video-time { font-size: 0.5rem; top: 8px; right: 8px; }
-  .about-annotation { bottom: -14%; right: -2%; }
-  .about-annotation-arrow { width: 26px; height: 22px; }
-  .about-annotation-text { font-size: 0.62rem; }
-  .about-sunburst { display: none; }
-}
-
-/* Mobile: 381px - 480px */
-@media (min-width: 381px) and (max-width: 480px) {
-  .about-section { padding: 0 5vw 100px; }
-  .about-hero-heading { padding: 64px 0 28px; }
+/* --- very small phones (up to 359px) --- */
+@media (max-width: 359px) {
+  .about-section {
+    --chevron-overlap: -12px;
+    --chevron-h: 112px;
+    --chevron-max-w: 86px;
+  }
   .about-heading-line { font-size: 2rem; }
-  .about-view-all-btn { font-size: 0.65rem; padding: 0.4em 0.9em; }
-  .about-icon-btn { width: 28px; height: 28px; }
-  .about-icon-btn svg { width: 12px; height: 12px; }
-  .about-statement { font-size: 0.9rem; margin-bottom: 48px; }
-  .about-card-stage { min-height: 230px; }
-  .about-ghost-text { font-size: 1.7rem; }
-  .about-ghost-left { left: 8px; }
-  .about-ghost-right { right: 8px; }
-  .about-video-card { width: 90vw; padding: 8px 12px; }
-  .about-video-label { font-size: 0.75rem; }
-  .about-annotation { bottom: -15%; right: -2%; }
-  .about-annotation-arrow { width: 30px; height: 25px; }
-  .about-annotation-text { font-size: 0.7rem; }
-  .about-sunburst { display: none; }
-}
-
-/* Large mobile / small phablet: 481px - 640px */
-@media (min-width: 481px) and (max-width: 640px) {
-  .about-hero-heading { padding: 72px 0 32px; }
-  .about-statement { margin-bottom: 56px; }
-  .about-card-stage { min-height: 280px; }
-  .about-video-card { width: 88vw; }
-  .about-annotation { bottom: -13%; right: -1%; }
-  .about-annotation-arrow { width: 38px; height: 32px; }
-  .about-annotation-text { font-size: 0.85rem; }
-  .about-sunburst { width: 260px; height: 260px; }
-}
-
-/* Tablet portrait: 641px - 768px */
-@media (min-width: 641px) and (max-width: 768px) {
-  .about-hero-heading { padding: 80px 0 40px; }
-  .about-card-stage { min-height: 340px; }
-  .about-video-card { width: 78vw; }
-  .about-annotation { bottom: -12%; }
-  .about-annotation-arrow { width: 46px; height: 38px; }
+  .about-statement { font-size: 0.95rem; }
   .about-annotation-text { font-size: 1rem; }
 }
 
-/* Tablet landscape: 769px - 1024px */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .about-card-stage { min-height: 420px; }
-  .about-video-card { width: 62vw; }
-  .about-annotation { bottom: -14%; right: -1%; }
-  .about-annotation-arrow { width: 56px; height: 46px; }
-  .about-annotation-text { font-size: 1.15rem; }
+/* --- phones (up to 599px) — tightened vertical rhythm --- */
+@media (max-width: 599px) {
+  .about-section {
+    padding-inline: 16px;
+    padding-bottom: 56px;
+
+    /* let content set the height instead of forcing 240px */
+    --stage-min-h: 0px;
+    --chevron-h: clamp(120px, 34vw, 190px);
+    --chevron-max-w: 112px;
+    --chevron-overlap: -16px;
+  }
+
+  .about-hero-heading { padding: 40px 0 18px; }
+  .about-heading-mask { margin-bottom: 8px; }
+
+  .about-statement {
+    margin-bottom: 30px;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .about-card-stage {
+    min-height: 0;
+    gap: 18px;
+  }
+
+  .about-annotation-arrow { width: 46px; }
+  .about-annotation-text { margin-top: -2px; }
+
+  .about-grid-overlay {
+    background-image: linear-gradient(90deg, rgba(20,18,16,0.06) 1px, transparent 1px);
+    background-size: 100% 1px;
+    background-position: center 68%;
+  }
 }
 
-/* Laptop: 1025px - 1440px */
-@media (min-width: 1025px) and (max-width: 1440px) {
-  .about-card-stage { min-height: 480px; }
-  .about-video-card { width: 46vw; }
+/* --- tablets portrait (600–1023px) --- */
+@media (min-width: 600px) and (max-width: 1023px) {
+  .about-section {
+    --chevron-h: clamp(200px, 28vw, 320px);
+    --chevron-max-w: clamp(150px, 21vw, 240px);
+    --stage-min-h: clamp(260px, 34vw, 400px);
+  }
 }
 
-/* Desktop: 1441px - 1920px */
-@media (min-width: 1441px) and (max-width: 1920px) {
-  .about-card-stage { min-height: 520px; }
-  .about-video-card { width: 700px; }
+/* --- laptops (1024–1439px) --- */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .about-section {
+    --chevron-h: clamp(280px, 26vw, 380px);
+    --chevron-max-w: clamp(210px, 20vw, 290px);
+  }
 }
 
-/* Large / ultra-wide desktop: 1921px+ */
-@media (min-width: 1921px) {
-  .about-section { padding: 0 6vw 200px; }
-  .about-card-stage { min-height: 600px; }
-  .about-video-card { width: 820px; }
-  .about-statement { max-width: 1200px; font-size: 2.1rem; }
+/* --- desktop (1440px+) --- */
+@media (min-width: 1440px) {
+  .about-section { --chevron-h: 400px; --chevron-max-w: 310px; }
+}
+
+/* --- large desktop / 4K (1920px+) --- */
+@media (min-width: 1920px) {
+  .about-section {
+    
+    --chevron-h: 440px;
+    --chevron-max-w: 340px;
+    --chevron-overlap: -56px;
+  }
+  .about-heading-line { font-size: 7rem; }
+  .about-statement { font-size: 1.6rem; max-width: 1100px; }
+}
+
+@media (min-width: 2560px) {
+  .about-inner { max-width: 1880px; }
   .about-heading-line { font-size: 7.5rem; }
 }
 
-/* Landscape short-height mobile (common orientation-change bug) */
-@media (max-height: 480px) and (orientation: landscape) {
-  .about-hero-heading { padding: 32px 0 16px; }
-  .about-card-stage { min-height: 200px; }
-  .about-annotation { bottom: -10%; }
+/* --- landscape phones / short viewports --- */
+@media (max-height: 520px) and (orientation: landscape) {
+  .about-hero-heading { padding: 24px 0 12px; }
+  .about-statement { margin-bottom: 24px; font-size: 0.95rem; }
+  .about-card-stage { min-height: 0; gap: 16px; }
+  .about-section {
+    --chevron-h: 150px;
+    --chevron-max-w: 150px;
+    padding-bottom: 48px;
+  }
 }
 
+/* --- touch devices: parallax overflow guard --- */
+@media (hover: none) {
+  .about-chevron-image { top: -12%; height: 124%; }
+}
+
+/* --- reduced motion --- */
 @media (prefers-reduced-motion: reduce) {
-  .about-sunburst { animation: none !important; }
+  .about-chevron,
+  .about-chevron-image,
+  .about-ribbon-wrap { will-change: auto; }
 }
 `;

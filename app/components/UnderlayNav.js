@@ -25,7 +25,7 @@ const BRAND = {
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
-  { label: "About Us", href: "/about" },
+  { label: "About Us", href: "/about-us" },
   {
     label: "Projects",
     href: "/projects",
