@@ -46,29 +46,24 @@ const TESTIMONIALS = [
   },
 ];
 
+// Breakpoints (px)
 const BP = {
-  mobile: 480,
-  tablet: 768,
-  laptop: 1024,
-  desktop: 1440,
-  big: 1920,
+  mobile: 640,   // < 640  -> 1 card
+  tablet: 1024,  // < 1024 -> 2 cards
+  laptop: 1440,  // < 1440 -> 3 cards
+  // >= 1440 (big/desktop) -> 3 cards, wider gutters
 };
 
 function getCardsVisible(width) {
   if (width < BP.mobile) return 1;
-  if (width < BP.tablet) return 1;
-  if (width < BP.laptop) return 2;
-  if (width < BP.desktop) return 3;
-  if (width < BP.big) return 3;
-  return 4;
+  if (width < BP.tablet) return 2;
+  return 3;
 }
 
 function getGap(width) {
-  if (width < BP.mobile) return 16;
-  if (width < BP.tablet) return 20;
-  if (width < BP.laptop) return 24;
-  if (width < BP.desktop) return 28;
-  return 32;
+  if (width < BP.mobile) return 14;
+  if (width < BP.tablet) return 18;
+  return 24;
 }
 
 export default function TestimonialsSection() {
@@ -84,38 +79,45 @@ export default function TestimonialsSection() {
   const autoplayRef = useRef(null);
   const isHoveringRef = useRef(false);
 
+  // touch/drag state
   const touchStartX = useRef(0);
   const touchDeltaX = useRef(0);
   const isDragging = useRef(false);
 
   const cardsVisible = getCardsVisible(viewportWidth);
   const gap = getGap(viewportWidth);
-  const maxIndex = Math.max(0, TESTIMONIALS.length - Math.ceil(cardsVisible));
+  const maxIndex = Math.max(0, TESTIMONIALS.length - cardsVisible);
 
-  // Measure card width
-  useEffect(() => {
-    const measure = () => {
-      if (cardRefs.current[0]) {
-        const rect = cardRefs.current[0].getBoundingClientRect();
-        setCardWidth(rect.width + gap);
-      }
-    };
-    
-    const timeout = setTimeout(measure, 100);
-    window.addEventListener("resize", measure);
-    return () => {
-      clearTimeout(timeout);
-      window.removeEventListener("resize", measure);
-    };
-  }, [gap, viewportWidth]);
+  const measure = useCallback(() => {
+    if (cardRefs.current[0]) {
+      const rect = cardRefs.current[0].getBoundingClientRect();
+      setCardWidth(rect.width + gap);
+    }
+  }, [gap]);
 
   useEffect(() => {
     const handleResize = () => {
       setViewportWidth(window.innerWidth);
     };
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    // remeasure whenever layout-affecting values change
+    const raf = requestAnimationFrame(measure);
+    window.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", measure);
+    };
+  }, [measure, viewportWidth, cardsVisible]);
+
+  // clamp index whenever cardsVisible / maxIndex changes (e.g. resize crosses a breakpoint)
+  useEffect(() => {
+    setIndex((prev) => Math.max(0, Math.min(maxIndex, prev)));
+  }, [maxIndex]);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -142,31 +144,42 @@ export default function TestimonialsSection() {
     (next) => {
       const clamped = Math.max(0, Math.min(maxIndex, next));
       setIndex(clamped);
-      if (trackRef.current && cardWidth > 0) {
+      if (trackRef.current && cardWidth) {
         gsap.to(trackRef.current, {
           x: -clamped * cardWidth,
           duration: 0.8,
           ease: "power3.out",
         });
       }
+      const visible = cardRefs.current.slice(clamped, clamped + cardsVisible);
+      gsap.fromTo(
+        visible.map((c) => c?.querySelector("[data-quote]")).filter(Boolean),
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out", stagger: 0.1, delay: 0.15 }
+      );
+      gsap.fromTo(
+        visible.map((c) => c?.querySelector("[data-name]")).filter(Boolean),
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power3.out", stagger: 0.1 }
+      );
     },
-    [cardWidth, maxIndex]
+    [cardWidth, maxIndex, cardsVisible]
   );
-
-  useEffect(() => {
-    if (cardWidth > 0) {
-      goTo(index);
-    }
-  }, [index, cardWidth, goTo]);
 
   useEffect(() => {
     autoplayRef.current = setInterval(() => {
       if (isHoveringRef.current) return;
       setIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
-    }, 4000);
+    }, 3800);
     return () => clearInterval(autoplayRef.current);
   }, [maxIndex]);
 
+  useEffect(() => {
+    goTo(index);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, cardWidth]);
+
+  // --- touch swipe handlers (mobile) ---
   const handleTouchStart = (e) => {
     isDragging.current = true;
     touchStartX.current = e.touches[0].clientX;
@@ -175,31 +188,33 @@ export default function TestimonialsSection() {
   };
 
   const handleTouchMove = (e) => {
-    if (!isDragging.current || !trackRef.current || !cardWidth) return;
+    if (!isDragging.current) return;
     touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
-    const currentX = -index * cardWidth + touchDeltaX.current;
-    const maxX = -(TESTIMONIALS.length - Math.ceil(cardsVisible)) * cardWidth;
-    const clampedX = Math.min(0, Math.max(maxX, currentX));
-    gsap.set(trackRef.current, {
-      x: clampedX,
-    });
+    if (trackRef.current && cardWidth) {
+      gsap.set(trackRef.current, {
+        x: -index * cardWidth + touchDeltaX.current,
+      });
+    }
   };
 
   const handleTouchEnd = () => {
     isDragging.current = false;
     isHoveringRef.current = false;
-    const threshold = cardWidth * 0.15;
+    const threshold = cardWidth * 0.18;
     if (touchDeltaX.current < -threshold) {
-      goTo(Math.min(index + 1, maxIndex));
+      goTo(index + 1);
     } else if (touchDeltaX.current > threshold) {
-      goTo(Math.max(index - 1, 0));
+      goTo(index - 1);
     } else {
-      goTo(index);
+      goTo(index); // snap back
     }
     touchDeltaX.current = 0;
   };
 
-  const progressPct = maxIndex === 0 ? 100 : ((index + cardsVisible) / TESTIMONIALS.length) * 100;
+  const progressPct =
+    maxIndex === 0 ? 100 : ((index + cardsVisible) / TESTIMONIALS.length) * 100;
+
+  const isMobile = viewportWidth < BP.mobile;
 
   return (
     <section
@@ -235,52 +250,43 @@ export default function TestimonialsSection() {
         <div style={styles.viewport}>
           <div
             ref={trackRef}
-            style={{ 
-              ...styles.track,
-              gap: `${gap}px`,
-            }}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+            style={{ ...styles.track, gap: `${gap}px` }}
+            onTouchStart={isMobile ? handleTouchStart : undefined}
+            onTouchMove={isMobile ? handleTouchMove : undefined}
+            onTouchEnd={isMobile ? handleTouchEnd : undefined}
           >
-            {TESTIMONIALS.map((t, i) => {
-              // Calculate card width based on visible cards
-              const cardWidthPercent = `calc((100% - ${gap * (Math.ceil(cardsVisible) - 1)}px) / ${Math.ceil(cardsVisible)})`;
-              
-              return (
-                <div
-                  key={t.id}
-                  ref={(el) => (cardRefs.current[i] = el)}
-                  style={{
-                    ...styles.card,
-                    flex: `0 0 ${cardWidthPercent}`,
-                    minWidth: viewportWidth < 480 ? '280px' : 'auto',
-                  }}
-                >
-                  <div style={styles.cardGlow} aria-hidden="true" />
+            {TESTIMONIALS.map((t, i) => (
+              <div
+                key={t.id}
+                ref={(el) => (cardRefs.current[i] = el)}
+                style={{
+                  ...styles.card,
+                  flex: `0 0 calc((100% - ${gap * (cardsVisible - 1)}px) / ${cardsVisible})`,
+                }}
+              >
+                <div style={styles.cardGlow} aria-hidden="true" />
 
-                  <div style={styles.cardTop}>
-                    <span data-name style={styles.cardName}>
-                      {t.name}
-                    </span>
-                    <span style={styles.cardQuoteMark} aria-hidden="true">
-                      &rdquo;
-                    </span>
-                  </div>
-
-                  <p data-quote style={styles.cardQuote}>
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
-
-                  <div style={styles.cardBottom}>
-                    <span style={styles.cardStars}>{"★".repeat(t.rating)}</span>
-                    <span style={styles.cardRating}>{t.rating}</span>
-                    <span style={styles.metaSep}>/</span>
-                    <span style={styles.cardDate}>{t.date}</span>
-                  </div>
+                <div style={styles.cardTop}>
+                  <span data-name style={styles.cardName}>
+                    {t.name}
+                  </span>
+                  <span style={styles.cardQuoteMark} aria-hidden="true">
+                    &rdquo;
+                  </span>
                 </div>
-              );
-            })}
+
+                <p data-quote style={styles.cardQuote}>
+                  &ldquo; {t.quote} &rdquo;
+                </p>
+
+                <div style={styles.cardBottom}>
+                  <span style={styles.cardStars}>{"★".repeat(t.rating)}</span>
+                  <span style={styles.cardRating}>{t.rating}</span>
+                  <span style={styles.metaSep}>/</span>
+                  <span style={styles.cardDate}>{t.date}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -289,7 +295,7 @@ export default function TestimonialsSection() {
             <div
               style={{
                 ...styles.progressFill,
-                width: `${Math.min(100, progressPct)}%`,
+                width: `${progressPct}%`,
               }}
             />
           </div>
@@ -349,17 +355,16 @@ export default function TestimonialsSection() {
 const styles = {
   section: {
     position: "relative",
+    // minHeight: "100dvh",
     display: "flex",
     alignItems: "center",
     padding: "clamp(2.5em, 8vw, 6em) clamp(1rem, 4vw, 4vw)",
     backgroundColor: "#eeeeec",
     boxSizing: "border-box",
-    minHeight: "60vh",
-    overflow: "hidden",
   },
   inner: {
     width: "100%",
-    maxWidth: "1800px",
+    maxWidth: "1500px",
     margin: "0 auto",
   },
   heroHeading: {
@@ -367,37 +372,50 @@ const styles = {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     gap: "16px",
-    textAlign: "left",
+    textAlign: "center",
     padding: "0 0 min(5vw, 56px)",
     width: "100%",
     boxSizing: "border-box",
   },
+
+  // ✅ BODY FONT: Figtree Regular
+  subtitle: {
+    fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
+    fontSize: "0.9rem",
+    fontWeight: 400,
+    color: "rgba(0,0,0,0.55)",
+    marginBottom: "18px",
+  },
+
   headingMask: {
     margin: "0",
     overflow: "hidden",
     flex: "1 1 auto",
-    minWidth: "160px",
+    minWidth: "200px",
   },
+
+  // ✅ HEADING FONT: Figtree Light
   headingLine: {
     display: "inline-block",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 500,
-    fontSize: "clamp(1.8rem, 7vw, 5.5rem)",
+    fontSize: "clamp(2rem, 7vw, 5.5rem)",
     letterSpacing: "-0.02em",
     color: "#101010",
     lineHeight: 1,
     textTransform: "uppercase",
   },
+
   topBarRight: {
     display: "flex",
     alignItems: "center",
     gap: "10px",
     flex: "0 0 auto",
-    flexWrap: "wrap",
-    justifyContent: "center",
   },
+
+  // ✅ BODY FONT: Figtree Medium
   viewAllBtn: {
     display: "inline-flex",
     alignItems: "center",
@@ -406,45 +424,40 @@ const styles = {
     backgroundColor: "#ffffff",
     color: "#101010",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "clamp(0.75rem, 1.3vw, 0.85rem)",
+    fontSize: "clamp(0.78rem, 1.3vw, 0.85rem)",
     fontWeight: 500,
     textDecoration: "none",
     whiteSpace: "nowrap",
-    border: "1px solid rgba(0,0,0,0.05)",
-    transition: "all 0.2s ease",
-    cursor: "pointer",
   },
+
   iconBtn: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "clamp(32px, 5vw, 38px)",
-    height: "clamp(32px, 5vw, 38px)",
+    width: "clamp(34px, 5vw, 38px)",
+    height: "clamp(34px, 5vw, 38px)",
     borderRadius: "10px",
     backgroundColor: "#ffffff",
     color: "#101010",
     flexShrink: 0,
-    border: "1px solid rgba(0,0,0,0.05)",
-    cursor: "pointer",
   },
+
   viewport: {
     overflow: "hidden",
     width: "100%",
     touchAction: "pan-y",
-    position: "relative",
   },
   track: {
     display: "flex",
     willChange: "transform",
-    transition: "transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
-    width: "100%",
   },
   card: {
     position: "relative",
-    minHeight: "clamp(17em, 26vw, 22em)",
+    minWidth: "240px",
+    minHeight: "clamp(19em, 26vw, 22em)",
     backgroundColor: "#ffffff",
     borderRadius: "1.25em",
-    padding: "clamp(1.3em, 4vw, 2.4em) clamp(1.1em, 3.5vw, 2.2em)",
+    padding: "clamp(1.5em, 4vw, 2.4em) clamp(1.3em, 3.5vw, 2.2em)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
@@ -471,23 +484,29 @@ const styles = {
     position: "relative",
     zIndex: 1,
   },
+
+  // ✅ BODY FONT: Figtree Medium
   cardName: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "clamp(0.85rem, 2vw, 0.95rem)",
+    fontSize: "clamp(0.88rem, 2vw, 0.95rem)",
     fontWeight: 500,
     color: "#131313",
     letterSpacing: "0.01em",
   },
+
+  // ✅ HEADING FONT: Figtree Light (for quote marks)
   cardQuoteMark: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 300,
-    fontSize: "clamp(1.4rem, 3.5vw, 2rem)",
+    fontSize: "clamp(1.6rem, 3.5vw, 2rem)",
     lineHeight: 1,
     color: "rgba(19,19,19,0.85)",
   },
+
+  // ✅ BODY FONT: Figtree Regular (italic)
   cardQuote: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "clamp(0.88rem, 2vw, 1.08rem)",
+    fontSize: "clamp(0.95rem, 2vw, 1.08rem)",
     fontStyle: "italic",
     fontWeight: 400,
     lineHeight: 1.6,
@@ -495,27 +514,29 @@ const styles = {
     margin: "1.4em 0",
     position: "relative",
     zIndex: 1,
-    flex: "1",
-    display: "flex",
-    alignItems: "center",
   },
+
+  // ✅ BODY FONT: Figtree Regular
   cardBottom: {
     display: "flex",
     alignItems: "center",
     flexWrap: "wrap",
     gap: "0.55em",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "clamp(0.74rem, 1.8vw, 0.85rem)",
+    fontSize: "clamp(0.78rem, 1.8vw, 0.85rem)",
     fontWeight: 400,
     color: "rgba(19,19,19,0.6)",
     position: "relative",
     zIndex: 1,
   },
+
   cardStars: {
     color: "#131313",
     fontSize: "0.9rem",
     letterSpacing: "0.03em",
   },
+
+  // ✅ BODY FONT: Figtree Medium
   cardRating: {
     color: "#131313",
     fontWeight: 500,
@@ -530,11 +551,11 @@ const styles = {
     display: "flex",
     flexWrap: "wrap",
     alignItems: "center",
-    gap: "clamp(14px, 4vw, 28px)",
-    marginTop: "clamp(1.6em, 5vw, 3.2em)",
+    gap: "clamp(16px, 4vw, 28px)",
+    marginTop: "clamp(2em, 5vw, 3.2em)",
   },
   progressTrack: {
-    flex: "1 1 120px",
+    flex: "1 1 140px",
     height: "2px",
     backgroundColor: "rgba(19,19,19,0.13)",
     position: "relative",
@@ -556,15 +577,14 @@ const styles = {
     flex: "0 0 auto",
   },
   navBtn: {
-    width: "clamp(38px, 8vw, 50px)",
-    height: "clamp(38px, 8vw, 50px)",
+    width: "clamp(42px, 8vw, 50px)",
+    height: "clamp(42px, 8vw, 50px)",
     borderRadius: "50%",
     border: "none",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     transition: "opacity 0.2s ease, transform 0.2s ease",
-    cursor: "pointer",
   },
   navBtnPrev: {
     backgroundColor: "#d6d6d3",
