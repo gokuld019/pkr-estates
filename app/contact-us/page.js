@@ -33,7 +33,7 @@ const heroSans = Inter({
 export default function ContactUsPage() {
   return (
     <main className={`${display.variable} ${body.variable} ${mono.variable} ${heroSans.variable}`}>
-      {/* ===== HERO — matches reference exactly ===== */}
+      {/* ===== HERO ===== */}
       <section className="hero">
         <h1 className="hero-title">CONTACT US</h1>
         <p className="hero-subtitle">
@@ -41,10 +41,15 @@ export default function ContactUsPage() {
         </p>
       </section>
 
-      {/* ===== CONTACT + FORM — matches Precept reference exactly ===== */}
+      {/* ===== CONTACT + FORM ===== */}
       <section className="contact">
         <div className="contact-media" aria-hidden="true">
-          <div className="contact-media-img" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="contact-media-img"
+            src="/contact-office.jpg"
+            alt=""
+          />
           <div className="contact-media-rule" />
         </div>
 
@@ -74,43 +79,43 @@ export default function ContactUsPage() {
               <span className="contact-label">EMAIL</span>
               <a
                 className="contact-value contact-value--strong"
-                href="mailto:contact@pkrestates.com"
+                href="mailto:pkr@pkrestates.com"
               >
                 pkr@pkrestates.com
               </a>
             </div>
+
+            <div className="contact-divider" />
+
+            <form className="contact-form" onSubmit={(e) => e.preventDefault()}>
+              <h2 className="contact-heading">Form</h2>
+
+              <div className="form-row">
+                <div className="form-field">
+                  <label htmlFor="name">Name</label>
+                  <input id="name" name="name" type="text" placeholder="Your Name" />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="email">Email</label>
+                  <input id="email" name="email" type="email" placeholder="Your Email" />
+                </div>
+              </div>
+
+              <div className="form-field form-field--full">
+                <label htmlFor="message">Message</label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows={4}
+                  placeholder="Your Message"
+                />
+              </div>
+
+              <button type="submit" className="form-submit">
+                Send
+              </button>
+            </form>
           </div>
-
-          <div className="contact-divider" />
-
-          <form className="contact-form" onSubmit={(e) => e.preventDefault()}>
-            <h2 className="contact-heading">Form</h2>
-
-            <div className="form-row">
-              <div className="form-field">
-                <label htmlFor="name">Name</label>
-                <input id="name" name="name" type="text" placeholder="Your Name" />
-              </div>
-              <div className="form-field">
-                <label htmlFor="email">Email</label>
-                <input id="email" name="email" type="email" placeholder="Your Email" />
-              </div>
-            </div>
-
-            <div className="form-field form-field--full">
-              <label htmlFor="message">Message</label>
-              <textarea
-                id="message"
-                name="message"
-                rows={4}
-                placeholder="Your Message"
-              />
-            </div>
-
-            <button type="submit" className="form-submit">
-              Send
-            </button>
-          </form>
         </div>
       </section>
 
@@ -119,7 +124,6 @@ export default function ContactUsPage() {
           font-family: var(--font-body), "Helvetica Neue", Arial, sans-serif;
           background: #faf7f1;
           color: #241f1a;
-          
         }
 
         /* ---------- HERO ---------- */
@@ -132,24 +136,25 @@ export default function ContactUsPage() {
           flex-direction: column;
           align-items: center;
           text-align: center;
-         
         }
         .hero-title {
           font-family: var(--font-hero), "Helvetica Neue", Arial, sans-serif;
           font-weight: 800;
-          font-size: clamp(3.2rem, 10vw, 7.5rem);
+          font-size: clamp(2.6rem, 10vw, 7.5rem);
           line-height: 0.95;
           letter-spacing: -0.03em;
           color: #111111;
           margin: 0;
-           margin-top: 70px;
+          margin-top: 50px;
+          word-break: break-word;
         }
         .hero-subtitle {
           margin-top: 1.25rem;
           font-family: var(--font-mono), "Courier New", monospace;
-          font-size: clamp(0.68rem, 1.1vw, 0.8rem);
-          letter-spacing: 0.14em;
+          font-size: clamp(0.62rem, 1.1vw, 0.8rem);
+          letter-spacing: 0.12em;
           color: #6b7280;
+          padding: 0 4px;
         }
 
         /* ---------- CONTACT + FORM ---------- */
@@ -163,14 +168,16 @@ export default function ContactUsPage() {
         .contact-media {
           position: relative;
           overflow: hidden;
-          background: #8f8f8f;
+          background: #e5e2da;
+          min-height: 340px;
         }
         .contact-media-img {
           position: absolute;
           inset: 0;
-          background:
-            radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.25), transparent 55%),
-            linear-gradient(135deg, #b5b5b5 0%, #6f6f6f 45%, #2a2a2a 100%);
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
         }
         .contact-media-rule {
           position: absolute;
@@ -182,7 +189,7 @@ export default function ContactUsPage() {
         }
 
         .contact-panel {
-          padding: 5vw 6vw;
+          padding: 5vw 3vw;
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -191,7 +198,7 @@ export default function ContactUsPage() {
         .contact-heading {
           font-family: var(--font-hero), "Helvetica Neue", Arial, sans-serif;
           font-weight: 800;
-          font-size: 2rem;
+          font-size: clamp(1.5rem, 3vw, 2rem);
           letter-spacing: -0.02em;
           color: #111111;
           margin: 0 0 2rem;
@@ -211,18 +218,19 @@ export default function ContactUsPage() {
 
         .contact-label {
           font-family: var(--font-mono), "Courier New", monospace;
-          font-size: 0.68rem;
-          letter-spacing: 0.18em;
+          font-size: 0.66rem;
+          letter-spacing: 0.16em;
           color: #9a9690;
         }
 
         .contact-value {
           font-family: var(--font-hero), "Helvetica Neue", Arial, sans-serif;
           font-weight: 400;
-          font-size: 1.05rem;
+          font-size: clamp(0.92rem, 2vw, 1.05rem);
           color: #241f1a;
           text-decoration: none;
           line-height: 1.55;
+          word-break: break-word;
         }
         .contact-value--strong {
           font-weight: 700;
@@ -266,14 +274,14 @@ export default function ContactUsPage() {
         .form-field label {
           font-family: var(--font-body), sans-serif;
           font-weight: 400;
-          font-size: 0.95rem;
+          font-size: 0.92rem;
           color: #4a463f;
         }
 
         .form-field input,
         .form-field textarea {
           font-family: var(--font-body), sans-serif;
-          font-size: 0.95rem;
+          font-size: 16px; /* prevents iOS zoom-on-focus */
           color: #241f1a;
           background: transparent;
           border: none;
@@ -282,6 +290,7 @@ export default function ContactUsPage() {
           outline: none;
           resize: vertical;
           transition: border-color 0.25s ease;
+          width: 100%;
         }
         .form-field input::placeholder,
         .form-field textarea::placeholder {
@@ -315,15 +324,27 @@ export default function ContactUsPage() {
         }
 
         /* ---------- RESPONSIVE ---------- */
+        @media (max-width: 1024px) {
+          .contact-panel {
+            padding: 6vw;
+          }
+          .form-row {
+            gap: 1.75rem;
+          }
+        }
+
         @media (max-width: 900px) {
           .contact {
             grid-template-columns: 1fr;
+            min-height: auto;
           }
           .contact-media {
-            min-height: 45vh;
+            min-height: 42vh;
+            order: 1;
           }
           .contact-panel {
-            padding: 10vw 6vw 14vw;
+            order: 2;
+            padding: 12vw 6vw 16vw;
           }
           .form-row {
             grid-template-columns: 1fr;
@@ -333,13 +354,43 @@ export default function ContactUsPage() {
 
         @media (max-width: 640px) {
           .hero {
-            padding: 4rem 6vw 3rem;
+            padding: 3.5rem 6vw 2.5rem;
+          }
+          .hero-title {
+            margin-top: 30px;
+          }
+          .contact-media {
+            min-height: 34vh;
+          }
+          .contact-media-rule {
+            top: 1.5rem;
+            left: 1.5rem;
+            right: 1.5rem;
+          }
+          .contact-panel {
+            padding: 10vw 6vw 12vw;
           }
           .contact-heading {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+          }
+          .contact-block {
+            gap: 1.4rem;
           }
           .contact-divider {
-            margin: 2.5rem 0;
+            margin: 2.2rem 0;
+          }
+          .form-submit {
+            width: 100%;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .contact-media {
+            min-height: 28vh;
+          }
+          .hero-title {
+            font-size: clamp(2.2rem, 12vw, 3rem);
           }
         }
       `}</style>

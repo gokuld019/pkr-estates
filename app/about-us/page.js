@@ -115,7 +115,9 @@ export default function AboutUsPage() {
 
       const mm = gsap.matchMedia();
 
-      mm.add("(min-width: 900px)", () => {
+      // Pin-scrub horizontal timeline only on larger screens.
+      // On mobile/tablet the track becomes a native horizontal-scroll strip instead.
+      mm.add("(min-width: 1024px)", () => {
         const track = timelineTrackRef.current;
         const wrapper = timelineWrapperRef.current;
 
@@ -578,6 +580,8 @@ const css = `
   --pkr-blue: #1c4fa0;
   --pkr-green: #1c4fa0;
   background-color: #ffffff;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .aboutus-page,
@@ -631,6 +635,7 @@ const css = `
   margin: 0 auto;
   overflow: hidden;
   aspect-ratio: 16 / 8.4;
+  border-radius: 0;
 }
 
 .aboutus-hero-image {
@@ -731,7 +736,6 @@ const css = `
   max-width: 34ch;
 }
 
-/* UPDATED: Stats section - white background with dark text */
 .stats-section {
   position: relative;
   background-color: #ffffff;
@@ -1044,6 +1048,7 @@ const css = `
   flex-shrink: 0;
   overflow: hidden;
   background-color: #d8d6d2;
+  border-radius: 8px;
 }
 
 .cta-person-photo img {
@@ -1087,6 +1092,7 @@ const css = `
 .cta-button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   align-self: flex-start;
   padding: 0.9em 1.6em;
@@ -1099,6 +1105,7 @@ const css = `
   text-decoration: none;
   border-radius: 999px;
   transition: background-color 0.25s ease;
+  white-space: nowrap;
 }
 
 .cta-button:hover,
@@ -1106,24 +1113,120 @@ const css = `
   background-color: var(--pkr-green);
 }
 
+/* ============ Very small phones (<= 380px) ============ */
 @media (max-width: 380px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 32px;
+  .aboutus-heading-section {
+    padding: 40px 20px 20px;
+  }
+  .aboutus-heading-line {
+    font-size: 2rem;
+  }
+  .aboutus-subtitle {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+  }
+  .aboutus-hero-section {
+    padding: 0 16px 40px;
+  }
+  .aboutus-hero-wrap {
+    aspect-ratio: auto;
+    min-height: 200px;
+    border-radius: 14px;
+  }
+  .timeline-heading-wrap {
+    padding: 0 16px;
+    margin-bottom: 22px;
+  }
+  .timeline-heading {
+    font-size: 1.7rem;
+  }
+  .timeline-track {
+    gap: 18px;
+    padding: 0 16px;
   }
   .timeline-item {
-    width: 82vw;
+    width: 84vw;
+  }
+  .timeline-image-wrap {
+    height: 58vw;
+    margin-bottom: 12px;
+    border-radius: 12px;
+  }
+  .timeline-text {
+    font-size: 0.85rem;
+  }
+  .stats-section {
+    padding: 32px 16px 44px;
+  }
+  .stats-heading {
+    font-size: 1.7rem;
+  }
+  .stats-subtitle {
+    font-size: 0.82rem;
+    margin-bottom: 28px;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+  .stats-number {
+    font-size: 2.4rem;
+    margin-bottom: 10px;
+  }
+  .cta-section {
+    padding: 32px 16px;
+  }
+  .cta-heading {
+    font-size: 1.9rem;
+    margin-bottom: 24px;
+  }
+  .cta-person-photo {
+    width: 100px;
+    height: 130px;
+  }
+  .cta-button {
+    width: 100%;
   }
 }
 
+/* ============ Mobile (<= 599px) ============ */
 @media (max-width: 599px) {
   .aboutus-heading-section {
-    padding: 48px 6vw 24px;
+    padding: 48px 20px 22px;
+    gap: 14px;
+    margin-top: 60px;
+  }
+
+  .aboutus-heading-line {
+    font-size: clamp(2.1rem, 11vw, 2.8rem);
+  }
+
+  .aboutus-subtitle {
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    line-height: 1.5;
+  }
+
+  .aboutus-hero-section {
+    padding: 0 16px 48px;
   }
 
   .aboutus-hero-wrap {
-    aspect-ratio: auto;
-    min-height: 300px;
+    aspect-ratio: 4 / 3.2;
+    border-radius: 16px;
+  }
+
+  .timeline-section {
+    padding: 36px 0;
+  }
+
+  .timeline-heading-wrap {
+    padding: 0 20px;
+    margin-bottom: 24px;
+  }
+
+  .timeline-heading {
+    font-size: clamp(1.7rem, 8vw, 2.2rem);
   }
 
   .timeline-wrapper {
@@ -1137,25 +1240,80 @@ const css = `
   }
 
   .timeline-track {
-    gap: 24px;
+    gap: 20px;
     padding: 0 20px;
   }
 
   .timeline-item {
-    width: 78vw;
+    width: 80vw;
+    scroll-snap-align: start;
+  }
+
+  .timeline-wrapper {
+    scroll-snap-type: x mandatory;
   }
 
   .timeline-image-wrap {
-    height: 62vw;
+    height: 60vw;
+    margin-bottom: 14px;
+    border-radius: 14px;
   }
 
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 32px 20px;
+  .timeline-year {
+    font-size: 1rem;
+  }
+
+  .timeline-text {
+    font-size: 0.9rem;
+    max-width: none;
+  }
+
+  .stats-section {
+    padding: 36px 20px 56px;
+  }
+
+  .stats-topbar {
+    margin-bottom: 32px;
   }
 
   .stats-topbar-dash {
     display: none;
+  }
+
+  .stats-eyebrow {
+    font-size: 0.66rem;
+  }
+
+  .stats-heading {
+    font-size: clamp(1.8rem, 8vw, 2.4rem);
+    margin-bottom: 18px;
+  }
+
+  .stats-subtitle {
+    font-size: 0.86rem;
+    margin-bottom: 36px;
+  }
+
+  .stats-tick-row {
+    margin-bottom: 30px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px 18px;
+  }
+
+  .stats-number {
+    font-size: clamp(1.9rem, 8vw, 2.6rem);
+    margin-bottom: 12px;
+  }
+
+  .stats-label {
+    font-size: 0.68rem;
+  }
+
+  .stats-code {
+    font-size: 0.6rem;
   }
 
   .cta-section {
@@ -1164,22 +1322,71 @@ const css = `
 
   .cta-grid {
     grid-template-columns: 1fr;
-    gap: 48px;
+    gap: 40px;
+  }
+
+  .cta-years {
+    font-size: 1.5rem;
+    margin: 14px 0 10px;
+  }
+
+  .cta-left-copy {
+    max-width: none;
+    margin-bottom: 28px;
+  }
+
+  .cta-stat-list {
+    margin-bottom: 28px;
+  }
+
+  .cta-stat {
+    font-size: 0.88rem;
   }
 
   .cta-year-range {
-    margin-top: 28px;
+    margin-top: 20px;
+    font-size: clamp(2rem, 12vw, 2.8rem);
+  }
+
+  .cta-heading {
+    font-size: clamp(1.9rem, 9vw, 2.6rem);
+    margin-bottom: 28px;
   }
 
   .cta-person-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+
+  .cta-person-photo {
+    width: 130px;
+    height: 160px;
+  }
+
+  .cta-person-quote {
+    max-width: none;
+  }
+
+  .cta-button {
+    width: 100%;
   }
 }
 
+/* ============ Tablet (600px - 1023px) ============ */
 @media (min-width: 600px) and (max-width: 1023px) {
+  .aboutus-heading-section {
+    padding: 64px 5vw 32px;
+  }
+
+  .aboutus-hero-section {
+    padding: 0 5vw 72px;
+  }
+
   .aboutus-hero-wrap {
     aspect-ratio: 16 / 10;
+    border-radius: 18px;
   }
 
   .timeline-wrapper {
@@ -1194,15 +1401,20 @@ const css = `
 
   .timeline-track {
     gap: 28px;
-    padding: 0 20px;
+    padding: 0 5vw;
   }
 
   .timeline-item {
-    width: 60vw;
+    width: 46vw;
+    scroll-snap-align: start;
+  }
+
+  .timeline-wrapper {
+    scroll-snap-type: x mandatory;
   }
 
   .timeline-image-wrap {
-    height: 48vw;
+    height: 36vw;
   }
 
   .stats-grid {
@@ -1212,14 +1424,23 @@ const css = `
 
   .cta-grid {
     grid-template-columns: 1fr;
-    gap: 48px;
+    gap: 56px;
   }
 
   .cta-year-range {
-    margin-top: 28px;
+    margin-top: 32px;
+  }
+
+  .cta-person-row {
+    flex-wrap: nowrap;
+  }
+
+  .cta-button {
+    width: auto;
   }
 }
 
+/* ============ Small laptop (1024px - 1279px) ============ */
 @media (min-width: 1024px) and (max-width: 1279px) {
   .stats-grid {
     gap: 28px;
@@ -1229,6 +1450,7 @@ const css = `
   }
 }
 
+/* ============ Large desktop (>= 1920px) ============ */
 @media (min-width: 1920px) {
   .aboutus-heading-line {
     font-size: 7.5rem;
@@ -1243,12 +1465,21 @@ const css = `
   }
 }
 
+/* ============ Short / landscape phones ============ */
 @media (max-height: 480px) and (orientation: landscape) {
   .aboutus-heading-section {
-    padding: 28px 6vw 16px;
+    padding: 24px 6vw 14px;
   }
   .aboutus-hero-wrap {
-    min-height: 220px;
+    min-height: 200px;
+    aspect-ratio: auto;
+  }
+  .timeline-image-wrap {
+    height: 40vh;
+  }
+  .cta-person-row {
+    flex-direction: row;
   }
 }
 `;
+

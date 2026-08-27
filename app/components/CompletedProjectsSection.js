@@ -33,30 +33,43 @@ const COMPLETED_PROJECTS = [
   },
 ];
 
-const BP = { xs: 400, mobile: 640, tablet: 1024 };
+const BP = { mobile: 768, tablet: 1024 };
 
 export default function CompletedProjectsSection() {
   const sectionRef = useRef(null);
   const headingLineRef = useRef(null);
   const imageRefs = useRef([]);
   const wrapRefs = useRef([]);
+  const veilRefs = useRef([]);
+  const revealRefs = useRef([]);
   const [viewportWidth, setViewportWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1280
   );
 
-  const isXs = viewportWidth < BP.xs;
   const isMobile = viewportWidth < BP.mobile;
   const isTablet = viewportWidth >= BP.mobile && viewportWidth < BP.tablet;
-
-  // Desktop (>=1024px) keeps the ORIGINAL fixed values untouched.
-  const gridColumns = isMobile ? "1fr" : "1fr 1fr";
-  const gridGap = isXs ? 10 : isMobile ? 14 : isTablet ? 18 : 20;
+  const gridGap = isMobile ? 24 : isTablet ? 18 : 20;
 
   useEffect(() => {
     const handleResize = () => setViewportWidth(window.innerWidth);
     handleResize();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+
+    let ro;
+    if (sectionRef.current && typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const w = entry.contentRect.width;
+          if (w > 0) setViewportWidth(w);
+        }
+      });
+      ro.observe(sectionRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (ro) ro.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -100,11 +113,11 @@ export default function CompletedProjectsSection() {
 
         gsap.fromTo(
           img,
-          { scale: 1.16, opacity: 0 },
+          { opacity: 0, y: 14 },
           {
-            scale: 1,
             opacity: 1,
-            duration: 1.2,
+            y: 0,
+            duration: 1.1,
             ease: "power3.out",
             scrollTrigger: { trigger: wrap, start: "top 90%", once: true },
           }
@@ -116,34 +129,93 @@ export default function CompletedProjectsSection() {
   }, []);
 
   const handleEnter = (i) => {
-    if (isMobile || isTablet) return; // no hover scale on touch devices
+    if (isMobile) return;
     const img = imageRefs.current[i];
-    if (!img) return;
-    gsap.to(img, {
-      scale: 1.06,
-      duration: 0.6,
-      ease: "power2.out",
-      overwrite: "auto",
-    });
+    const veil = veilRefs.current[i];
+    const reveal = revealRefs.current[i];
+
+    if (img) {
+      gsap.to(img, {
+        filter: "grayscale(0) brightness(1.02) saturate(1.08)",
+        duration: 0.55,
+        ease: "power2.out",
+        overwrite: "auto",
+      });
+    }
+    if (veil) {
+      gsap.to(veil, { opacity: 1, duration: 0.5, ease: "power2.out", overwrite: "auto" });
+    }
+    if (reveal) {
+      gsap.to(reveal, {
+        y: 0,
+        opacity: 1,
+        duration: 0.55,
+        ease: "power3.out",
+        overwrite: "auto",
+      });
+    }
   };
 
   const handleLeave = (i) => {
-    if (isMobile || isTablet) return;
+    if (isMobile) return;
     const img = imageRefs.current[i];
-    if (!img) return;
-    gsap.to(img, {
-      scale: 1,
-      duration: 0.6,
-      ease: "power2.out",
-      overwrite: "auto",
-    });
+    const veil = veilRefs.current[i];
+    const reveal = revealRefs.current[i];
+
+    if (img) {
+      gsap.to(img, {
+        filter: "grayscale(0.18) brightness(1) saturate(1)",
+        duration: 0.55,
+        ease: "power2.out",
+        overwrite: "auto",
+      });
+    }
+    if (veil) {
+      gsap.to(veil, { opacity: 0, duration: 0.45, ease: "power2.out", overwrite: "auto" });
+    }
+    if (reveal) {
+      gsap.to(reveal, {
+        y: 18,
+        opacity: 0,
+        duration: 0.4,
+        ease: "power2.out",
+        overwrite: "auto",
+      });
+    }
   };
 
   return (
     <section ref={sectionRef} style={styles.section}>
-      <div style={styles.heroHeading}>
+      <style>{`
+        .cp-wrap .cp-frame {
+          transition: border-color 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.5s ease;
+        }
+        .cp-wrap:hover .cp-frame { border-color: rgba(255,255,255,0.55); opacity: 1; }
+        .cp-wrap .cp-corner {
+          transition: transform 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.4s ease;
+        }
+        .cp-wrap:hover .cp-corner--tl { transform: translate(4px, 4px); opacity: 1; }
+        .cp-wrap:hover .cp-corner--br { transform: translate(-4px, -4px); opacity: 1; }
+        .cp-wrap .cp-plus { transition: transform 0.5s cubic-bezier(0.16,1,0.3,1), color 0.4s ease; }
+        .cp-wrap:hover .cp-plus { color: rgba(255,255,255,0.85); transform: rotate(90deg); }
+        .cp-wrap .cp-arrow { transition: transform 0.5s cubic-bezier(0.16,1,0.3,1); }
+        .cp-wrap:hover .cp-arrow { transform: translate(3px, -3px); }
+        @media (prefers-reduced-motion: reduce) {
+          .cp-wrap .cp-frame, .cp-wrap .cp-corner, .cp-wrap .cp-plus, .cp-wrap .cp-arrow {
+            transition: none !important;
+          }
+        }
+      `}</style>
+
+      <div style={{ ...styles.heroHeading, ...(isMobile ? styles.heroHeadingMobile : {}) }}>
         <h2 style={styles.headingMask}>
-          <span ref={headingLineRef} style={styles.headingLine}>
+          <span
+            ref={headingLineRef}
+            style={{
+              ...styles.headingLine,
+              ...(isMobile ? { fontSize: "clamp(1.8rem, 9vw, 2.4rem)" } : {}),
+            }}
+          >
             Completed Projects
           </span>
         </h2>
@@ -167,31 +239,76 @@ export default function CompletedProjectsSection() {
       <div
         style={{
           ...styles.grid,
-          gridTemplateColumns: gridColumns,
+          ...(isMobile ? styles.gridMobile : {}),
           columnGap: `${gridGap}px`,
           rowGap: `${gridGap}px`,
         }}
       >
         {COMPLETED_PROJECTS.map((project, i) => (
-          <div key={project.name} style={styles.column}>
-            <div data-fade style={styles.titleRow}>
-              <span style={styles.dot} />
-              <span style={styles.title}>{project.name}</span>
+          <div
+            key={project.name}
+            style={{
+              ...styles.column,
+              ...(isMobile ? styles.columnMobile : {}),
+            }}
+          >
+            <div
+              data-fade
+              style={{
+                ...styles.titleRow,
+                ...(isMobile
+                  ? {
+                      padding: "14px 16px",
+                      height: "auto",
+                      borderBottom: "none",
+                      alignItems: "flex-start",
+                    }
+                  : {}),
+              }}
+            >
+              <span
+                style={{
+                  ...styles.dot,
+                  ...(isMobile ? { width: "7px", height: "7px", marginTop: "7px" } : {}),
+                }}
+              />
+              <span
+                style={{
+                  ...styles.title,
+                  ...(isMobile
+                    ? {
+                        fontSize: "0.98rem",
+                        whiteSpace: "normal",
+                        letterSpacing: "-0.01em",
+                        lineHeight: 1.3,
+                      }
+                    : {}),
+                }}
+              >
+                {project.name}
+              </span>
             </div>
 
             <div
               ref={(el) => (wrapRefs.current[i] = el)}
               data-fade
+              className="cp-wrap"
               style={{
                 ...styles.imageWrap,
-                height: isXs ? "58vw" : isMobile ? "62vw" : isTablet ? "42vw" : "clamp(260px, 62vw, 560px)",
+                ...(isMobile
+                  ? {
+                      width: "100%",
+                      aspectRatio: "16 / 10",
+                      backgroundColor: "#f0f0f0",
+                      borderRadius: "0 0 18px 18px",
+                    }
+                  : {
+                      height: "clamp(240px, 62vw, 560px)",
+                    }),
               }}
               onMouseEnter={() => handleEnter(i)}
               onMouseLeave={() => handleLeave(i)}
             >
-              <span style={{ ...styles.plusIcon, top: "16px" }}>+</span>
-              <span style={{ ...styles.plusIcon, bottom: "16px" }}>+</span>
-
               <img
                 ref={(el) => (imageRefs.current[i] = el)}
                 src={project.image}
@@ -200,10 +317,85 @@ export default function CompletedProjectsSection() {
                 draggable={false}
               />
 
+              {/* darkening veil — fades in on hover, no scaling */}
+              <span
+                ref={(el) => (veilRefs.current[i] = el)}
+                style={styles.veil}
+                aria-hidden="true"
+              />
+
+              {/* inset frame line that brightens on hover */}
+              <span className="cp-frame" style={styles.frame} aria-hidden="true" />
+
+              {/* corner ticks that ease outward */}
+              <span className="cp-corner cp-corner--tl" style={styles.cornerTL} aria-hidden="true" />
+              <span className="cp-corner cp-corner--br" style={styles.cornerBR} aria-hidden="true" />
+
+              <span
+                className="cp-plus"
+                style={{ ...styles.plusIcon, top: isMobile ? "12px" : "16px" }}
+              >
+                +
+              </span>
+              <span
+                className="cp-plus"
+                style={{ ...styles.plusIcon, bottom: isMobile ? "12px" : "16px" }}
+              >
+                +
+              </span>
+
+              {/* slide-up reveal label */}
+              {!isMobile && (
+                <span
+                  ref={(el) => (revealRefs.current[i] = el)}
+                  style={styles.revealPill}
+                  aria-hidden="true"
+                >
+                  View project
+                  <svg
+                    className="cp-arrow"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <path
+                      d="M7 17L17 7M17 7H9M17 7v8"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              )}
+
               {project.badge.type === "ribbon" && (
-                <div style={styles.ribbonTab}>
-                  <span style={styles.ribbonCheck}>&#10003;</span>
-                  <span style={styles.ribbonText}>{project.badge.value}</span>
+                <div
+                  style={{
+                    ...styles.ribbonTab,
+                    top: isMobile ? "14px" : "clamp(12px, 2vw, 20px)",
+                    padding: isMobile
+                      ? "12px 8px"
+                      : "clamp(8px, 2vw, 14px) clamp(6px, 1.5vw, 10px)",
+                  }}
+                >
+                  <span
+                    style={{
+                      ...styles.ribbonCheck,
+                      fontSize: isMobile ? "1rem" : "clamp(0.7rem, 1.2vw, 0.9rem)",
+                    }}
+                  >
+                    &#10003;
+                  </span>
+                  <span
+                    style={{
+                      ...styles.ribbonText,
+                      fontSize: isMobile ? "0.72rem" : "clamp(0.6rem, 1vw, 0.72rem)",
+                    }}
+                  >
+                    {project.badge.value}
+                  </span>
                 </div>
               )}
             </div>
@@ -211,7 +403,7 @@ export default function CompletedProjectsSection() {
         ))}
       </div>
 
-      <div style={styles.footerBrand}>
+      <div style={{ ...styles.footerBrand, ...(isMobile ? { textAlign: "center", padding: "16px 16px 0" } : {}) }}>
         <span style={styles.brandName}>Cuberto™</span>
       </div>
     </section>
@@ -238,20 +430,16 @@ const styles = {
     width: "100%",
     boxSizing: "border-box",
   },
-
-  subtitle: {
-    fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "0.9rem",
-    fontWeight: 400,
-    color: "rgba(0,0,0,0.55)",
-    marginBottom: "18px",
+  heroHeadingMobile: {
+    padding: "2.2em 1.25rem 1.75rem",
+    gap: "14px",
   },
 
   headingMask: {
     margin: "0",
     overflow: "hidden",
     flex: "1 1 auto",
-    minWidth: "200px",
+    minWidth: "160px",
   },
 
   headingLine: {
@@ -300,11 +488,18 @@ const styles = {
 
   grid: {
     display: "grid",
+    gridTemplateColumns: "1fr 1fr",
     gridAutoRows: "1fr",
     padding: "0 clamp(1rem, 4vw, 20px)",
     width: "100%",
     boxSizing: "border-box",
     alignItems: "stretch",
+  },
+  gridMobile: {
+    gridTemplateColumns: "1fr",
+    padding: "0 16px",
+    maxWidth: "560px",
+    margin: "0 auto",
   },
   column: {
     display: "flex",
@@ -312,21 +507,30 @@ const styles = {
     overflow: "hidden",
     borderRadius: "14px",
     height: "100%",
+    width: "100%",
+  },
+  columnMobile: {
+    maxWidth: "100%",
+    marginBottom: "0",
+    height: "auto",
+    borderRadius: "20px",
+    boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+    border: "1px solid rgba(0,0,0,0.06)",
   },
   titleRow: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    padding: "clamp(10px, 2vw, 14px) clamp(14px, 3vw, 20px)",
+    gap: "clamp(8px, 1.5vw, 10px)",
+    padding: "clamp(12px, 2vw, 14px) clamp(12px, 3vw, 20px)",
     borderBottom: "1px solid rgba(0,0,0,0.08)",
     backgroundColor: "#ffffff",
-    height: "clamp(46px, 6vw, 52px)",
+    height: "clamp(48px, 6vw, 52px)",
     boxSizing: "border-box",
     flex: "0 0 auto",
   },
   dot: {
-    width: "6px",
-    height: "6px",
+    width: "clamp(5px, 0.8vw, 6px)",
+    height: "clamp(5px, 0.8vw, 6px)",
     borderRadius: "50%",
     backgroundColor: "#ff5a3c",
     flex: "0 0 auto",
@@ -334,7 +538,7 @@ const styles = {
 
   title: {
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "clamp(0.82rem, 2vw, 0.9rem)",
+    fontSize: "clamp(0.75rem, 2vw, 0.9rem)",
     fontWeight: 500,
     color: "#171412",
     flex: 1,
@@ -343,68 +547,126 @@ const styles = {
     textOverflow: "ellipsis",
   },
 
-  countBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: "22px",
-    height: "22px",
-    padding: "0 6px",
-    borderRadius: "6px",
-    border: "1px solid rgba(0,0,0,0.15)",
-    fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "0.75rem",
-    fontWeight: 500,
-    color: "#171412",
-  },
-
   imageWrap: {
     position: "relative",
     width: "100%",
     flex: "1 1 auto",
     overflow: "hidden",
-    backgroundColor: "#e8e8e8",
+    backgroundColor: "#f0f0f0",
     cursor: "pointer",
     borderRadius: "0 0 14px 14px",
   },
+
   image: {
     position: "absolute",
-    left: 0,
-    top: 0,
+    inset: 0,
     width: "100%",
     height: "100%",
-    objectFit: "cover",
     display: "block",
-    transformOrigin: "center center",
-    willChange: "transform",
+    objectFit: "cover",
+    objectPosition: "center",
+    filter: "grayscale(0.18) brightness(1) saturate(1)",
+    willChange: "filter, opacity",
+  },
+
+  veil: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 1,
+    pointerEvents: "none",
+    opacity: 0,
+    background:
+      "linear-gradient(180deg, rgba(10,10,12,0.30) 0%, rgba(10,10,12,0.06) 45%, rgba(10,10,12,0.62) 100%)",
+  },
+
+  frame: {
+    position: "absolute",
+    inset: "14px",
+    zIndex: 2,
+    pointerEvents: "none",
+    border: "1px solid rgba(255,255,255,0)",
+    borderRadius: "6px",
+    opacity: 0.9,
+  },
+
+  cornerTL: {
+    position: "absolute",
+    top: "14px",
+    left: "14px",
+    zIndex: 3,
+    width: "22px",
+    height: "22px",
+    pointerEvents: "none",
+    borderTop: "2px solid rgba(255,255,255,0.9)",
+    borderLeft: "2px solid rgba(255,255,255,0.9)",
+    borderRadius: "4px 0 0 0",
+    opacity: 0,
+  },
+
+  cornerBR: {
+    position: "absolute",
+    bottom: "14px",
+    right: "14px",
+    zIndex: 3,
+    width: "22px",
+    height: "22px",
+    pointerEvents: "none",
+    borderBottom: "2px solid rgba(255,255,255,0.9)",
+    borderRight: "2px solid rgba(255,255,255,0.9)",
+    borderRadius: "0 0 4px 0",
+    opacity: 0,
   },
 
   plusIcon: {
     position: "absolute",
-    left: "16px",
-    zIndex: 2,
+    left: "clamp(12px, 2vw, 16px)",
+    zIndex: 3,
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "1.1rem",
+    fontSize: "clamp(1rem, 1.5vw, 1.1rem)",
     fontWeight: 300,
     color: "rgba(0,0,0,0.4)",
     lineHeight: 1,
+    pointerEvents: "none",
+  },
+
+  revealPill: {
+    position: "absolute",
+    left: "clamp(16px, 2.5vw, 24px)",
+    bottom: "clamp(16px, 2.5vw, 24px)",
+    zIndex: 4,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "9px",
+    padding: "10px 18px",
+    borderRadius: "999px",
+    backgroundColor: "rgba(255,255,255,0.14)",
+    border: "1px solid rgba(255,255,255,0.34)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+    color: "#ffffff",
+    fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
+    fontSize: "0.78rem",
+    fontWeight: 600,
+    letterSpacing: "0.01em",
+    whiteSpace: "nowrap",
+    pointerEvents: "none",
+    opacity: 0,
+    transform: "translateY(18px)",
   },
 
   ribbonTab: {
     position: "absolute",
-    top: "20px",
     right: 0,
-    zIndex: 2,
+    zIndex: 5,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: "10px",
-    padding: "clamp(10px, 2vw, 14px) clamp(8px, 1.5vw, 10px)",
+    gap: "clamp(6px, 1vw, 10px)",
     backgroundColor: "#171412",
     color: "#ffffff",
+    borderRadius: "4px 0 0 4px",
   },
   ribbonCheck: {
-    fontSize: "0.9rem",
     fontWeight: 700,
   },
 
@@ -412,7 +674,6 @@ const styles = {
     writingMode: "vertical-rl",
     transform: "rotate(180deg)",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
-    fontSize: "0.72rem",
     fontWeight: 500,
     letterSpacing: "0.06em",
     textTransform: "uppercase",

@@ -241,6 +241,8 @@ export default function WhyChooseSection() {
 
   return (
     <section ref={sectionRef} className="pkr-why">
+      <span className="pkr-why__chevronDecor" aria-hidden="true" />
+
       <div className="pkr-why__inner">
         <div className="pkr-why__heroHeading">
           <h2 className="pkr-why__headingMask">
@@ -275,8 +277,6 @@ export default function WhyChooseSection() {
             ))}
           </h2>
         </div>
-
-        <span className="pkr-why__chevronDecor" aria-hidden="true" />
 
         <div
           ref={trackRef}
@@ -387,6 +387,8 @@ export default function WhyChooseSection() {
         }
 
         .pkr-why__heroHeading {
+          position: relative;
+          z-index: 2;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -414,6 +416,8 @@ export default function WhyChooseSection() {
         }
 
         .pkr-why__header {
+          position: relative;
+          z-index: 2;
           max-width: min(81ch, 1040px);
           margin: 0 auto clamp(28px, 5vw, 56px);
           text-align: center;
@@ -429,13 +433,12 @@ export default function WhyChooseSection() {
           line-height: 1.38;
           letter-spacing: -0.01em;
           color: var(--ink);
-          
+
           /* Force exactly 3 lines */
           display: -webkit-box;
           -webkit-line-clamp: 3;
           -webkit-box-orient: vertical;
           overflow: hidden;
-         
         }
 
         .pkr-why__wordMaskWrap {
@@ -460,8 +463,8 @@ export default function WhyChooseSection() {
 
         .pkr-why__chevronDecor {
           position: absolute;
-          top: -6%;
-          right: 2vw;
+          top: 6%;
+          right: 8vw;
           width: clamp(96px, 20vw, 340px);
           height: clamp(96px, 20vw, 340px);
           background-color: var(--chip);
@@ -551,17 +554,29 @@ export default function WhyChooseSection() {
           .pkr-why {
             padding: 0 16px 56px;
           }
+
+          /* chevron pushed fully behind and clear of the text block */
+          .pkr-why__chevronDecor {
+            top: 0;
+            right: 3vw;
+            width: 108px;
+            height: 108px;
+            opacity: 0.55;
+            z-index: 0;
+          }
+
           .pkr-why__heroHeading {
             padding: 36px 0 10px;
           }
           .pkr-why__header {
             margin-bottom: 26px;
+            /* keeps the headline off the chevron */
+            padding-inline: 2px;
           }
-          .pkr-why__chevronDecor {
-            top: -3%;
-            right: -6vw;
-            width: 130px;
-            height: 130px;
+          .pkr-why__heading {
+            -webkit-line-clamp: unset;
+            display: block;
+            overflow: visible;
           }
 
           .pkr-why__grid {
@@ -609,18 +624,37 @@ export default function WhyChooseSection() {
             max-width: none;
           }
 
+          /* ---- CONTROLS: count on its own row ABOVE the arrows ---- */
           .pkr-why__controls {
-            display: flex;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-areas:
+              "count count"
+              "arrows dots";
             align-items: center;
-            gap: 14px;
+            column-gap: 14px;
+            row-gap: 12px;
             margin: 0 0 22px;
-            min-height: 44px;
           }
           .pkr-why__controls:empty {
             display: none;
           }
 
+          .pkr-why__count {
+            grid-area: count;
+            justify-self: start;
+            font-family: var(--font);
+            font-size: 0.8rem;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.04em;
+            color: var(--ink-muted);
+            white-space: nowrap;
+            line-height: 1;
+          }
+
           .pkr-why__arrows {
+            grid-area: arrows;
             display: flex;
             gap: 8px;
           }
@@ -651,10 +685,11 @@ export default function WhyChooseSection() {
           }
 
           .pkr-why__dots {
+            grid-area: dots;
             display: flex;
             gap: 6px;
-            flex: 1;
-            justify-content: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
           }
           .pkr-why__dot {
             width: 7px;
@@ -669,14 +704,6 @@ export default function WhyChooseSection() {
           .pkr-why__dot.is-active {
             width: 20px;
             background: var(--ink);
-          }
-
-          .pkr-why__count {
-            font-family: var(--font);
-            font-size: 0.78rem;
-            font-variant-numeric: tabular-nums;
-            color: var(--ink-muted);
-            white-space: nowrap;
           }
 
           .pkr-why__cta {
@@ -700,10 +727,12 @@ export default function WhyChooseSection() {
             font-size: 3rem;
           }
           .pkr-why__controls {
-            gap: 10px;
+            column-gap: 10px;
           }
-          .pkr-why__count {
-            display: none;
+          .pkr-why__chevronDecor {
+            width: 88px;
+            height: 88px;
+            right: -18vw;
           }
         }
 

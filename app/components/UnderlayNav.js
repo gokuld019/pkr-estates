@@ -7,13 +7,7 @@ import gsap from "gsap";
 import { CustomEase } from "gsap/CustomEase";
 import Image from "next/image";
 
-/* ================== BRAND PALETTE (from PKR ESTATES logo) ==================
-   Deep blue   #12459B  — primary brand blue ("PKR" wordmark)
-   Blue tint   #1E5BC6  — lighter swirl blue
-   Green       #0BA37F  — "ESTATES" wordmark / swirl green
-   Ink         #0C2340  — near-black navy for text
-   Cream       #F5F7FA  — cool off-white panel
-=========================================================================== */
+/* ================== BRAND PALETTE (from PKR ESTATES logo) ================== */
 const BRAND = {
   blue: "#12459B",
   blueLight: "#1E5BC6",
@@ -22,6 +16,8 @@ const BRAND = {
   panel: "#F4F7FA",
   border: "rgba(12,35,64,0.15)",
 };
+
+const FONT = "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
@@ -35,7 +31,7 @@ const NAV_LINKS = [
     ],
   },
   { label: "EMI Calculator", href: "/emi-calculator" },
-  { label: "Blogs", href: "/" },
+  { label: "Blogs", href: "/blogs" },
   { label: "Contact Us", href: "/contact-us" },
 ];
 
@@ -60,12 +56,23 @@ export default function UnderlayNav() {
   const darkRef = useRef(null);
   const isOpenRef = useRef(false);
   const headerRef = useRef(null);
-  const toggleFnRef = useRef(null); // exposes toggle() outside the setup effect
+  const toggleFnRef = useRef(null);
   const [hideHeader, setHideHeader] = useState(false);
   const [scrolledPastHero, setScrolledPastHero] = useState(false);
   const [expandedItem, setExpandedItem] = useState(null);
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
 
-  // Hero visibility → header colour only (transparent over hero, white after)
+  const isMobile = viewportWidth < 640;
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   useEffect(() => {
     const heroEl = document.querySelector("[data-hero-banner]");
     if (!heroEl) {
@@ -87,7 +94,6 @@ export default function UnderlayNav() {
     return () => observer.disconnect();
   }, [pathname]);
 
-  // Scroll direction → hide on scroll down, reveal on scroll up
   useEffect(() => {
     let lastY = window.scrollY;
     let ticking = false;
@@ -124,7 +130,6 @@ export default function UnderlayNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Animate header in/out
   useEffect(() => {
     if (!headerRef.current) return;
     const shouldHide = hideHeader && !isOpenRef.current;
@@ -137,12 +142,9 @@ export default function UnderlayNav() {
     });
   }, [hideHeader]);
 
-  // Menu GSAP setup — no longer hard-requires [data-main]
   useEffect(() => {
     if (!toggleBtnRef.current || !menuRef.current) return;
 
-    // mainEl is optional: some pages don't wrap content in [data-main].
-    // When absent, the menu/overlay still animate; we just skip pushing the page content.
     const mainEl = document.querySelector("[data-main]");
 
     gsap.registerPlugin(CustomEase);
@@ -167,7 +169,6 @@ export default function UnderlayNav() {
 
     const getMenuOffset = () => -menuEl.offsetWidth;
 
-    // Panel parked fully off-screen right so it never widens the document
     gsap.set(menuEl, { xPercent: 100, pointerEvents: "none" });
     gsap.set(darkEl, { autoAlpha: 0 });
     if (mainEl) gsap.set(mainEl, { borderTopRightRadius: 0, borderBottomRightRadius: 0 });
@@ -290,8 +291,6 @@ export default function UnderlayNav() {
       }
     }
 
-    // Instant close, no animation — used on route change so there's no
-    // visible reverse-animation flash and no stale transform state left behind.
     function closeInstantly() {
       if (!isOpen && tl.time() === 0) return;
       tl.pause(0);
@@ -353,13 +352,9 @@ export default function UnderlayNav() {
       }
       toggleFnRef.current = null;
     };
-    // Intentionally re-run this setup whenever the route changes, since some
-    // pages render/remove [data-main] conditionally and refs can point at
-    // stale DOM nodes after a Next.js route transition.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  // Force-close the menu on every route change.
   useEffect(() => {
     if (toggleFnRef.current) {
       toggleFnRef.current.closeInstantly();
@@ -411,10 +406,18 @@ export default function UnderlayNav() {
         style={{
           ...styles.header,
           ...(scrolledPastHero ? styles.headerOnWhite : styles.headerOnHero),
+          ...(isMobile ? styles.headerMobile : {}),
         }}
       >
         <Link href="/" style={styles.logo}>
-          <Image src="/pkr-logo.png" alt="PKR Estate" width={140} height={50} priority style={styles.logoImg} />
+          <Image
+            src="/pkr-logo.png"
+            alt="PKR Estate"
+            width={140}
+            height={50}
+            priority
+            style={{ ...styles.logoImg, maxHeight: isMobile ? "2.1em" : "2.6em" }}
+          />
         </Link>
 
         <button
@@ -427,19 +430,36 @@ export default function UnderlayNav() {
             color: scrolledPastHero ? BRAND.blue : "#ffffff",
           }}
         >
-          <span style={styles.toggleTextWrap}>
+          <span style={{ ...styles.toggleTextWrap, ...(isMobile ? { display: "none" } : {}) }}>
             <span data-toggle-label style={styles.toggleLabel}>Menu</span>
             <span data-toggle-label style={styles.toggleLabel}>Close</span>
           </span>
-          <span style={styles.toggleIconWrap}>
+          <span
+            style={{
+              ...styles.toggleIconWrap,
+              width: isMobile ? "1.7em" : "1.5em",
+              gap: isMobile ? "0.4em" : "0.35em",
+            }}
+          >
             <span data-toggle-bar style={styles.toggleBar} />
             <span data-toggle-bar style={styles.toggleBar} />
           </span>
         </button>
       </header>
 
-      <nav ref={menuRef} style={styles.menu} aria-label="Primary">
-        <div style={styles.menuInner}>
+      <nav
+        ref={menuRef}
+        style={{ ...styles.menu, ...(isMobile ? styles.menuMobile : {}) }}
+        aria-label="Primary"
+      >
+        <div
+          style={{
+            ...styles.menuInner,
+            padding: isMobile
+              ? "calc(4.5em + 1.25em) 1.15em 1.75em"
+              : "calc(5.25em + 1.5em) 1.5em 2em",
+          }}
+        >
           <ul style={styles.linkList}>
             {NAV_LINKS.map((item) => {
               const isCurrent = pathname === item.href;
@@ -454,6 +474,7 @@ export default function UnderlayNav() {
                     style={{
                       ...styles.linkLargeButton,
                       ...(isCurrent ? styles.linkLargeButtonCurrent : null),
+                      ...(isMobile ? styles.linkLargeButtonMobile : {}),
                     }}
                   >
                     <span style={styles.linkLargeLabelRow}>
@@ -490,6 +511,7 @@ export default function UnderlayNav() {
                               style={{
                                 ...styles.subLinkButton,
                                 ...(isChildCurrent ? styles.subLinkButtonCurrent : null),
+                                ...(isMobile ? { fontSize: "1rem" } : {}),
                               }}
                             >
                               {child.label}
@@ -504,7 +526,7 @@ export default function UnderlayNav() {
             })}
           </ul>
 
-          <div style={styles.bottom}>
+          <div style={{ ...styles.bottom, ...(isMobile ? styles.bottomMobile : {}) }}>
             <div style={styles.bottomBorder} data-menu-border />
             <div style={styles.bottomCol}>
               <div data-reveal-s>
@@ -580,6 +602,10 @@ const styles = {
     willChange: "transform",
     transition: "background-color 0.3s ease, box-shadow 0.3s ease",
   },
+  headerMobile: {
+    height: "4.5em",
+    padding: "0 1.15em",
+  },
   headerOnHero: {
     backgroundColor: "transparent",
     boxShadow: "none",
@@ -618,7 +644,7 @@ const styles = {
     overflow: "hidden",
   },
   toggleLabel: {
-    fontFamily: "var(--font-manrope), 'Manrope', 'Segoe UI', sans-serif",
+    fontFamily: FONT,
     fontSize: "1rem",
     fontWeight: 600,
     lineHeight: "1.6em",
@@ -646,9 +672,13 @@ const styles = {
     width: "min(28em, 92vw)",
     maxWidth: "100%",
     backgroundColor: BRAND.panel,
-    borderLeft: `3px solid ${BRAND.green}`,
+    
     overflow: "hidden",
     willChange: "transform",
+  },
+  menuMobile: {
+    width: "100vw",
+    borderLeft: "none",
   },
   menuInner: {
     display: "flex",
@@ -676,11 +706,11 @@ const styles = {
   linkLargeButton: {
     display: "flex",
     alignItems: "center",
-    borderRadius: "0.4em",
+    borderRadius: "0.5em",
     padding: "0.5em 0.7em",
     margin: 0,
-    fontFamily: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
-    fontWeight: 700,
+    fontFamily: FONT,
+    fontWeight: 600,
     fontSize: "clamp(1.9rem, 4.6vw, 2.9rem)",
     lineHeight: 1.15,
     letterSpacing: "-0.02em",
@@ -695,6 +725,10 @@ const styles = {
     boxSizing: "border-box",
     transition: "background-color 0.2s ease, color 0.2s ease",
   },
+  linkLargeButtonMobile: {
+    fontSize: "clamp(1.65rem, 8vw, 2.1rem)",
+    padding: "0.45em 0.55em",
+  },
   linkLargeLabelRow: {
     display: "flex",
     alignItems: "center",
@@ -704,7 +738,7 @@ const styles = {
   },
   chevron: {
     display: "inline-block",
-    fontSize: "0.65em",
+    fontSize: "0.6em",
     transition: "transform 0.3s ease, color 0.2s ease",
     lineHeight: 1,
   },
@@ -731,7 +765,7 @@ const styles = {
     cursor: "pointer",
     padding: "0.4em 0.7em",
     margin: 0,
-    fontFamily: "var(--font-manrope), 'Manrope', 'Segoe UI', sans-serif",
+    fontFamily: FONT,
     fontSize: "1.1rem",
     fontWeight: 500,
     color: "rgba(12,35,64,0.68)",
@@ -750,6 +784,11 @@ const styles = {
     paddingTop: "2em",
     width: "100%",
   },
+  bottomMobile: {
+    flexDirection: "column",
+    gap: "1.4em",
+    paddingTop: "1.5em",
+  },
   bottomBorder: {
     position: "absolute",
     top: 0,
@@ -767,7 +806,7 @@ const styles = {
     minWidth: 0,
   },
   linkSmallFaded: {
-    fontFamily: "var(--font-manrope), 'Manrope', 'Segoe UI', sans-serif",
+    fontFamily: FONT,
     fontSize: "0.85rem",
     fontWeight: 600,
     letterSpacing: "0.06em",
@@ -783,7 +822,7 @@ const styles = {
     gap: "0.6em",
   },
   linkSmall: {
-    fontFamily: "var(--font-manrope), 'Manrope', 'Segoe UI', sans-serif",
+    fontFamily: FONT,
     fontSize: "0.95rem",
     color: "rgba(12,35,64,0.85)",
     textDecoration: "none",

@@ -7,7 +7,8 @@ import WhyChooseSection from "./components/WhyChooseSection";
 import ProjectsSection from "./components/ProjectsSection";
 import CompletedProjectsSection from "./components/CompletedProjectsSection";
 import TestimonialsSection from "./components/TestimonialsSection";
-import ConnectSection from "./components/ConnectSection";
+// import ConnectSection from "./components/ConnectSection";
+import BlogPage from "./components/blogs";
 
 export default function Home() {
   return (
@@ -23,7 +24,8 @@ export default function Home() {
       <ProjectsSection />
       <TestimonialsSection />
       <CompletedProjectsSection />
-      <ConnectSection />
+      <BlogPage />
+      {/* <ConnectSection /> */}
       {/* <GallerySection /> */}
     </main>
   );
