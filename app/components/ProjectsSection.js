@@ -69,7 +69,6 @@ const PROJECTS = [
 const CHEVRON_CLIP =
   "polygon(0% 0%, 55% 0%, 100% 50%, 55% 100%, 0% 100%, 40% 50%)";
 
-// Tailwind-style breakpoints: mobile <640, tablet 640-1024, laptop 1024-1440, desktop 1440-1920, big 1920+
 const BREAKPOINTS = {
   mobile: 639,
   tablet: 1023,
@@ -104,10 +103,18 @@ export default function ProjectsSection() {
   const stripRef = useRef(null);
   const dotRefs = useRef([]);
   const bp = useBreakpoint();
-  const isStacked = bp === "mobile" || bp === "tablet";
+
+  // Controls only how the INSIDE of a card is laid out.
+  // The strip itself stays horizontal at every breakpoint.
+  const isCompact = bp === "mobile" || bp === "tablet";
+  const isMobile = bp === "mobile";
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
+
+    // Stops the iOS address bar collapse from refreshing ScrollTrigger mid-pin.
+    ScrollTrigger.config({ ignoreMobileResize: true });
+
     const ctx = gsap.context(() => {
       gsap.fromTo(
         headingLineRef.current,
@@ -143,43 +150,71 @@ export default function ProjectsSection() {
 
       const mm = gsap.matchMedia();
 
-      // Horizontal pinned scroll only on laptop+ where the card layout is
-      // side-by-side. On mobile/tablet the section scrolls normally —
-      // pinning a stacked, image-heavy card creates a huge unusable scroll
-      // distance on small screens.
-      mm.add("(min-width: 1024px)", () => {
-        const getScrollLength = () =>
-          Math.max(0, stripRef.current.scrollWidth - stripRef.current.offsetWidth);
+      // Two conditions instead of a min-width gate, so the tween is rebuilt
+      // when the breakpoint flips rather than existing only on desktop.
+      mm.add(
+        {
+          compact: "(max-width: 1023px)",
+          wide: "(min-width: 1024px)",
+        },
+        (context) => {
+          const { compact } = context.conditions;
 
-        const st = gsap.to(stripRef.current, {
-          x: () => -getScrollLength(),
-          ease: "none",
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            pin: true,
-            scrub: 1,
-            anticipatePin: 1,
-            start: "top top",
-            end: () => `+=${getScrollLength()}`,
-            invalidateOnRefresh: true,
-            onUpdate: (self) => {
-              const active = Math.round(self.progress * (PROJECTS.length - 1));
-              dotRefs.current.forEach((el, i) => {
-                if (!el) return;
-                el.style.opacity = i === active ? "1" : "0.35";
-                el.style.width = i === active ? "28px" : "8px";
-              });
+          const getScrollLength = () => {
+            if (!stripRef.current) return 0;
+            return Math.max(
+              0,
+              stripRef.current.scrollWidth - stripRef.current.offsetWidth
+            );
+          };
+
+          // A single viewport of scroll per card reads as a flick on a phone.
+          const distanceMultiplier = compact ? 2 : 1;
+
+          if (getScrollLength() === 0) {
+            console.warn(
+              "[ProjectsSection] Strip has no horizontal overflow — the section is probably collapsing to auto height."
+            );
+          }
+
+          const st = gsap.to(stripRef.current, {
+            x: () => -getScrollLength(),
+            ease: "none",
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              pin: true,
+              scrub: 1,
+              anticipatePin: 1,
+              start: "top top",
+              end: () => `+=${getScrollLength() * distanceMultiplier}`,
+              invalidateOnRefresh: true,
+              onUpdate: (self) => {
+                const active = Math.round(self.progress * (PROJECTS.length - 1));
+                dotRefs.current.forEach((el, i) => {
+                  if (!el) return;
+                  el.style.opacity = i === active ? "1" : "0.35";
+                  el.style.width = i === active ? "28px" : "8px";
+                });
+              },
             },
-          },
-        });
+          });
 
-        return () => st.scrollTrigger && st.scrollTrigger.kill();
-      });
+          return () => st.scrollTrigger && st.scrollTrigger.kill();
+        }
+      );
 
       return () => mm.revert();
     }, sectionRef);
 
     return () => ctx.revert();
+  }, []);
+
+  // Images can settle after the pin is measured, which leaves the scroll
+  // distance short. Refresh once everything has loaded.
+  useEffect(() => {
+    const refresh = () => ScrollTrigger.refresh();
+    window.addEventListener("load", refresh);
+    return () => window.removeEventListener("load", refresh);
   }, []);
 
   return (
@@ -188,15 +223,35 @@ export default function ProjectsSection() {
       ref={sectionRef}
       style={{
         ...styles.section,
-        height: isStacked ? "auto" : "100vh",
-        minHeight: isStacked ? "auto" : "100vh",
+        height: "100vh",
+        minHeight: "100vh",
       }}
     >
       <span style={styles.chevronDecor} aria-hidden="true" />
 
-      <div style={styles.heroHeading}>
-        <h2 style={styles.headingMask}>
-          <span ref={headingLineRef} style={styles.headingLine}>
+      <div
+        style={{
+          ...styles.heroHeading,
+          padding: isCompact
+            ? "12px 5vw 8px"
+            : "clamp(16px, 3vw, 24px) 5vw clamp(12px, 2vw, 16px)",
+        }}
+      >
+        <h2
+          style={{
+            ...styles.headingMask,
+            margin: isCompact ? "0 0 8px" : "0 0 12px",
+          }}
+        >
+          <span
+            ref={headingLineRef}
+            style={{
+              ...styles.headingLine,
+              fontSize: isCompact
+                ? "clamp(1.5rem, 6.5vw, 2.4rem)"
+                : "clamp(1.9rem, 7vw, 5.5rem)",
+            }}
+          >
             Ongoing Projects
           </span>
         </h2>
@@ -206,64 +261,83 @@ export default function ProjectsSection() {
           </a>
           <span style={styles.iconBtn} aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M12 3v18M3 12h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <path
+                d="M12 3v18M3 12h18"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
             </svg>
           </span>
         </div>
       </div>
 
-      <div
-        style={{
-          ...styles.stripWrap,
-          flex: isStacked ? "0 0 auto" : 1,
-          overflow: isStacked ? "visible" : "hidden",
-        }}
-      >
-        <div
-          ref={stripRef}
-          style={{
-            ...styles.strip,
-            flexDirection: isStacked ? "column" : "row",
-            height: isStacked ? "auto" : "110%",
-          }}
-        >
+      <div style={styles.stripWrap}>
+        <div ref={stripRef} style={styles.strip}>
           {PROJECTS.map((project) => {
             const d = project.details;
+
+            // Type already appears as the tag above the title, so on small
+            // screens the grid keeps only the two facts that aren't repeated.
+            const facts = [
+              { key: "type", label: "Type", value: d.projectType, Icon: IconBuilding },
+              { key: "size", label: "Size", value: d.developmentSize, Icon: IconArea },
+              { key: "beds", label: "Bedrooms", value: d.bedrooms, Icon: IconPlan },
+              { key: "units", label: "Units", value: d.totalUnits, Icon: IconHome },
+            ];
+            const shownFacts = isCompact
+              ? facts.filter((f) => f.key === "beds" || f.key === "units")
+              : facts;
+
             return (
               <div
                 key={project.name}
                 style={{
                   ...styles.card,
-                  flexDirection: isStacked ? "column" : "row",
-                  padding: isStacked ? "0 5vw" : "0 6vw",
-                  gap: isStacked ? "24px" : "clamp(24px, 4vw, 64px)",
-                  marginBottom: isStacked ? "48px" : 0,
+                  flexDirection: isCompact ? "column" : "row",
+                  padding: isCompact ? "0 5vw 12px" : "0 6vw",
+                  gap: isCompact ? "14px" : "clamp(24px, 4vw, 64px)",
+                  justifyContent: isCompact ? "flex-start" : "center",
                 }}
               >
                 <div
                   style={{
                     ...styles.cardImageWrap,
-                    width: isStacked ? "100%" : "min(42vw, 620px)",
-                    height: isStacked ? "min(70vw, 420px)" : "min(60vh, 620px)",
+                    width: isCompact ? "100%" : "min(42vw, 620px)",
+                    height: isCompact ? "34vh" : "min(60vh, 620px)",
+                    minHeight: isCompact ? "190px" : "auto",
                   }}
                 >
-                  <img src={project.image} alt={project.name} style={styles.cardImage} />
+                  <img
+                    src={project.image}
+                    alt={project.name}
+                    style={styles.cardImage}
+                  />
                   <div style={styles.imageGradient} />
                 </div>
 
                 <div
                   style={{
                     ...styles.detailCard,
-                    flex: isStacked ? "1 1 auto" : "0 1 440px",
-                    maxWidth: isStacked ? "100%" : "440px",
-                    width: "100%",
+                    flex: isCompact ? "0 1 auto" : "0 1 440px",
+                    maxWidth: isCompact ? "100%" : "440px",
                   }}
                 >
                   <div style={styles.detailTopRow}>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <span style={styles.projectTag}>{d.projectType}</span>
                       <h3 style={styles.detailTitle}>{d.title}</h3>
-                      <p style={styles.detailAddress}>{d.address}</p>
+                      <p
+                        style={{
+                          ...styles.detailAddress,
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: isCompact ? 2 : 3,
+                          overflow: "hidden",
+                        }}
+                      >
+                        {d.address}
+                      </p>
                     </div>
                     <span style={styles.phoneBtn} aria-hidden="true">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
@@ -277,115 +351,113 @@ export default function ProjectsSection() {
                     </span>
                   </div>
 
-                  <div style={styles.priceRow}>
+                  <div
+                    style={{
+                      ...styles.priceRow,
+                      paddingBottom: isCompact
+                        ? "12px"
+                        : "clamp(16px, 3vw, 24px)",
+                    }}
+                  >
                     <span style={styles.priceLabel}>Starting from</span>
-                    <p style={styles.detailPrice}>₹{d.price}</p>
+                    <p
+                      style={{
+                        ...styles.detailPrice,
+                        fontSize: isCompact
+                          ? "clamp(1.25rem, 6vw, 1.6rem)"
+                          : "clamp(1.4rem, 3.5vw, 2.2rem)",
+                      }}
+                    >
+                      ₹{d.price}
+                    </p>
                   </div>
 
                   <div
                     style={{
                       ...styles.detailGrid,
-                      gridTemplateColumns:
-                        bp === "mobile" ? "1fr 1fr" : "1fr 1fr",
+                      margin: isCompact ? "12px 0" : "clamp(16px, 3vw, 24px) 0",
+                      paddingBottom: isCompact
+                        ? "12px"
+                        : "clamp(16px, 3vw, 24px)",
+                      rowGap: isCompact ? "10px" : "clamp(14px, 2.5vw, 18px)",
                     }}
                   >
-                    <div style={styles.detailItem}>
-                      <span style={styles.detailIcon} aria-hidden="true">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                          <path
-                            d="M4 21V6l7-3 7 3v15M4 21h16M9 21v-4h4v4M9 10h1M14 10h1M9 14h1M14 14h1"
-                            stroke="currentColor"
-                            strokeWidth="1.6"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </span>
-                      <div>
-                        <span style={styles.detailLabel}>Type</span>
-                        <span style={styles.detailValue}>{d.projectType}</span>
+                    {shownFacts.map(({ key, label, value, Icon }) => (
+                      <div key={key} style={styles.detailItem}>
+                        <span style={styles.detailIcon} aria-hidden="true">
+                          <Icon />
+                        </span>
+                        <div style={{ minWidth: 0 }}>
+                          <span style={styles.detailLabel}>{label}</span>
+                          <span style={styles.detailValue}>{value}</span>
+                        </div>
                       </div>
-                    </div>
-
-                    <div style={styles.detailItem}>
-                      <span style={styles.detailIcon} aria-hidden="true">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                          <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
-                          <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.6" />
-                        </svg>
-                      </span>
-                      <div>
-                        <span style={styles.detailLabel}>Size</span>
-                        <span style={styles.detailValue}>{d.developmentSize}</span>
-                      </div>
-                    </div>
-
-                    <div style={styles.detailItem}>
-                      <span style={styles.detailIcon} aria-hidden="true">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                          <rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" strokeWidth="1.6" />
-                          <path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                        </svg>
-                      </span>
-                      <div>
-                        <span style={styles.detailLabel}>Bedrooms</span>
-                        <span style={styles.detailValue}>{d.bedrooms}</span>
-                      </div>
-                    </div>
-
-                    <div style={styles.detailItem}>
-                      <span style={styles.detailIcon} aria-hidden="true">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                          <path
-                            d="M4 20V10l8-6 8 6v10M4 20h16M9 20v-6h6v6"
-                            stroke="currentColor"
-                            strokeWidth="1.6"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </span>
-                      <div>
-                        <span style={styles.detailLabel}>Units</span>
-                        <span style={styles.detailValue}>{d.totalUnits}</span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
 
-                  <div style={styles.countdownWrap}>
-                    <div style={styles.completionBanner}>
-                      <span>{d.completionLabel}</span>
+                  {isCompact ? (
+                    // The four-cell countdown doesn't fit alongside everything
+                    // else on a phone, so the same fact ships as one line.
+                    <div style={styles.completionInline}>
+                      <span>Completion</span>
                       <strong>{d.completionDate}</strong>
                     </div>
+                  ) : (
+                    <div style={styles.countdownWrap}>
+                      <div style={styles.completionBanner}>
+                        <span>{d.completionLabel}</span>
+                        <strong>{d.completionDate}</strong>
+                      </div>
 
-                    <div style={styles.countdownRow}>
-                      <div style={styles.countdownItem}>
-                        <span style={styles.countdownValue}>{d.countdown.days}</span>
-                        <span style={styles.countdownUnit}>Days</span>
-                      </div>
-                      <div style={styles.countdownDivider} />
-                      <div style={styles.countdownItem}>
-                        <span style={styles.countdownValue}>{d.countdown.hours}</span>
-                        <span style={styles.countdownUnit}>Hrs</span>
-                      </div>
-                      <div style={styles.countdownDivider} />
-                      <div style={styles.countdownItem}>
-                        <span style={styles.countdownValue}>{d.countdown.minutes}</span>
-                        <span style={styles.countdownUnit}>Min</span>
-                      </div>
-                      <div style={styles.countdownDivider} />
-                      <div style={styles.countdownItem}>
-                        <span style={styles.countdownValue}>{d.countdown.seconds}</span>
-                        <span style={styles.countdownUnit}>Sec</span>
+                      <div style={styles.countdownRow}>
+                        <div style={styles.countdownItem}>
+                          <span style={styles.countdownValue}>
+                            {d.countdown.days}
+                          </span>
+                          <span style={styles.countdownUnit}>Days</span>
+                        </div>
+                        <div style={styles.countdownDivider} />
+                        <div style={styles.countdownItem}>
+                          <span style={styles.countdownValue}>
+                            {d.countdown.hours}
+                          </span>
+                          <span style={styles.countdownUnit}>Hrs</span>
+                        </div>
+                        <div style={styles.countdownDivider} />
+                        <div style={styles.countdownItem}>
+                          <span style={styles.countdownValue}>
+                            {d.countdown.minutes}
+                          </span>
+                          <span style={styles.countdownUnit}>Min</span>
+                        </div>
+                        <div style={styles.countdownDivider} />
+                        <div style={styles.countdownItem}>
+                          <span style={styles.countdownValue}>
+                            {d.countdown.seconds}
+                          </span>
+                          <span style={styles.countdownUnit}>Sec</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  <Link href={`/projects/${project.slug}`} style={styles.knowMoreBtn}>
+                  <Link
+                    href={`/projects/${project.slug}`}
+                    style={{
+                      ...styles.knowMoreBtn,
+                      padding: isCompact ? "9px 16px" : "10px 18px",
+                    }}
+                  >
                     <span>Know More</span>
                     <span style={styles.knowMoreArrow} aria-hidden="true">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path
+                          d="M9 5l7 7-7 7"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                     </span>
                   </Link>
@@ -396,16 +468,89 @@ export default function ProjectsSection() {
         </div>
       </div>
 
-      {!isStacked && (
-        <div style={styles.progressRow}>
-          {PROJECTS.map((project, i) => (
-            <span key={project.name} ref={(el) => (dotRefs.current[i] = el)} style={styles.progressDot} />
-          ))}
-        </div>
-      )}
+      <div
+        style={{
+          ...styles.progressRow,
+          right: isMobile ? "auto" : "6vw",
+          left: isMobile ? "50%" : "auto",
+          transform: isMobile ? "translateX(-50%)" : "none",
+          bottom: isCompact ? "12px" : "24px",
+        }}
+      >
+        {PROJECTS.map((project, i) => (
+          <span
+            key={project.name}
+            ref={(el) => (dotRefs.current[i] = el)}
+            style={styles.progressDot}
+          />
+        ))}
+      </div>
     </section>
   );
 }
+
+/* ---------- icons ---------- */
+
+const IconBuilding = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M4 21V6l7-3 7 3v15M4 21h16M9 21v-4h4v4M9 10h1M14 10h1M9 14h1M14 14h1"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const IconArea = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+    <rect
+      x="4"
+      y="4"
+      width="16"
+      height="16"
+      rx="2"
+      stroke="currentColor"
+      strokeWidth="1.6"
+    />
+    <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.6" />
+  </svg>
+);
+
+const IconPlan = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+    <rect
+      x="5"
+      y="3"
+      width="14"
+      height="18"
+      rx="2"
+      stroke="currentColor"
+      strokeWidth="1.6"
+    />
+    <path
+      d="M9 8h6M9 12h6M9 16h3"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const IconHome = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M4 20V10l8-6 8 6v10M4 20h16M9 20v-6h6v6"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+/* ---------- styles ---------- */
 
 const styles = {
   section: {
@@ -435,20 +580,17 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
     textAlign: "center",
-    padding: "clamp(16px, 3vw, 24px) 5vw clamp(12px, 2vw, 16px)",
     width: "100%",
     boxSizing: "border-box",
     flex: "0 0 auto",
   },
   headingMask: {
-    margin: "0 0 12px",
     overflow: "hidden",
   },
   headingLine: {
     display: "inline-block",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 500,
-    fontSize: "clamp(1.9rem, 7vw, 5.5rem)",
     letterSpacing: "-0.02em",
     color: "#141313",
     lineHeight: 1,
@@ -464,7 +606,7 @@ const styles = {
   viewAllBtn: {
     display: "inline-flex",
     alignItems: "center",
-    padding: "0.7em 1.3em",
+    padding: "0.6em 1.2em",
     borderRadius: "999px",
     backgroundColor: "#f0eee9",
     color: "#141313",
@@ -478,8 +620,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "38px",
-    height: "38px",
+    width: "34px",
+    height: "34px",
     borderRadius: "10px",
     backgroundColor: "#f0eee9",
     color: "#141313",
@@ -487,29 +629,32 @@ const styles = {
   },
   stripWrap: {
     position: "relative",
+    flex: 1,
     minHeight: 0,
     width: "100%",
     maxWidth: "100%",
-    paddingBottom: "clamp(24px, 4vw, 40px)",
+    overflow: "hidden",
     boxSizing: "border-box",
   },
   strip: {
     display: "flex",
+    flexDirection: "row",
     flexWrap: "nowrap",
     width: "100%",
+    height: "100%",
     willChange: "transform",
   },
   card: {
     position: "relative",
     flex: "0 0 100%",
     width: "100%",
+    height: "100%",
     maxWidth: "1600px",
     margin: "0 auto",
-    height: "auto",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
     boxSizing: "border-box",
+    overflow: "hidden",
   },
   cardImageWrap: {
     position: "relative",
@@ -527,15 +672,17 @@ const styles = {
   imageGradient: {
     position: "absolute",
     inset: 0,
-    background: "linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.28) 100%)",
+    background:
+      "linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.28) 100%)",
     pointerEvents: "none",
   },
   detailCard: {
     position: "relative",
     minWidth: 0,
+    minHeight: 0,
+    width: "100%",
     backgroundColor: "#ffffff",
     borderRadius: "4px",
-    padding: 0,
     boxSizing: "border-box",
     color: "#141313",
   },
@@ -554,7 +701,7 @@ const styles = {
     letterSpacing: "0.1em",
     textTransform: "uppercase",
     color: "#8a8a86",
-    marginBottom: "10px",
+    marginBottom: "8px",
   },
   detailTitle: {
     margin: "0 0 4px",
@@ -585,7 +732,6 @@ const styles = {
   },
   priceRow: {
     display: "block",
-    paddingBottom: "clamp(16px, 3vw, 24px)",
     borderBottom: "1px solid rgba(20,19,19,0.15)",
   },
   priceLabel: {
@@ -595,10 +741,9 @@ const styles = {
     color: "#6b6b68",
   },
   detailPrice: {
-    margin: "6px 0 0",
+    margin: "4px 0 0",
     fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
     fontWeight: 700,
-    fontSize: "clamp(1.4rem, 3.5vw, 2.2rem)",
     color: "#141313",
     letterSpacing: "-0.03em",
     lineHeight: 1.1,
@@ -606,10 +751,7 @@ const styles = {
   detailGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    rowGap: "clamp(14px, 2.5vw, 18px)",
     columnGap: "16px",
-    margin: "clamp(16px, 3vw, 24px) 0",
-    paddingBottom: "clamp(16px, 3vw, 24px)",
     borderBottom: "1px solid rgba(20,19,19,0.15)",
   },
   detailItem: {
@@ -641,6 +783,22 @@ const styles = {
     fontSize: "clamp(0.82rem, 1.8vw, 0.9rem)",
     color: "#141313",
     wordBreak: "break-word",
+  },
+  completionInline: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    backgroundColor: "#f7f6f3",
+    borderRadius: "8px",
+    padding: "9px 12px",
+    marginBottom: "12px",
+    fontFamily: "var(--font-figtree), 'Figtree', 'Segoe UI', sans-serif",
+    fontSize: "0.7rem",
+    fontWeight: 500,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "#8a8a86",
   },
   countdownWrap: {
     marginBottom: "clamp(16px, 3vw, 24px)",
@@ -705,7 +863,6 @@ const styles = {
     textDecoration: "none",
     backgroundColor: "#f0eee9",
     borderRadius: "999px",
-    padding: "10px 18px",
     transition: "background-color 0.2s ease",
     width: "fit-content",
   },
@@ -720,8 +877,6 @@ const styles = {
   },
   progressRow: {
     position: "absolute",
-    bottom: "24px",
-    right: "6vw",
     zIndex: 2,
     display: "flex",
     alignItems: "center",

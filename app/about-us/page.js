@@ -4,29 +4,6 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-const TIMELINE_ITEMS = [
-  {
-    year: "2019",
-    image: "/timeline/timeline-1.jpg",
-    text: "PKR Estate was founded in Chennai to build homes shaped around light, material, and daily life — planned and delivered under one roof.",
-  },
-  {
-    year: "2021",
-    image: "/timeline/timeline-2.jpg",
-    text: "Our first residential projects broke ground, bringing thoughtful layouts and lasting materials to growing neighborhoods.",
-  },
-  {
-    year: "2023",
-    image: "/timeline/timeline-3.jpg",
-    text: "Expanded into full-service delivery — design, construction, and after-sale support handled entirely in-house.",
-  },
-  {
-    year: "2025",
-    image: "/timeline/timeline-4.jpg",
-    text: "Today we continue building homes across Chennai with a focus on craft, transparency, and long-term trust.",
-  },
-];
-
 const STATS = [
   { value: "86+", label: "PROJECTS SHIPPED", code: "//001" },
   { value: "80%", label: "REPEAT COLLABORATIONS", code: "//002" },
@@ -38,11 +15,6 @@ export default function AboutUsPage() {
   const headingRef = useRef(null);
   const subtitleRef = useRef(null);
   const heroRef = useRef(null);
-
-  const timelineSectionRef = useRef(null);
-  const timelineHeadingRef = useRef(null);
-  const timelineTrackRef = useRef(null);
-  const timelineWrapperRef = useRef(null);
 
   const statsSectionRef = useRef(null);
   const statsHeadingRef = useRef(null);
@@ -89,92 +61,6 @@ export default function AboutUsPage() {
         }
       );
     });
-
-    return () => ctx.revert();
-  }, []);
-
-  useLayoutEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        timelineHeadingRef.current,
-        { opacity: 0, y: 24 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.9,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: timelineSectionRef.current,
-            start: "top 78%",
-            once: true,
-          },
-        }
-      );
-
-      const mm = gsap.matchMedia();
-
-      // Pin-scrub horizontal timeline only on larger screens.
-      // On mobile/tablet the track becomes a native horizontal-scroll strip instead.
-      mm.add("(min-width: 1024px)", () => {
-        const track = timelineTrackRef.current;
-        const wrapper = timelineWrapperRef.current;
-
-        const getScrollDistance = () => {
-          const distance = track.scrollWidth - wrapper.offsetWidth;
-          return distance > 0 ? distance : 0;
-        };
-
-        const tween = gsap.to(track, {
-          x: () => -getScrollDistance(),
-          ease: "none",
-          scrollTrigger: {
-            trigger: timelineSectionRef.current,
-            start: "top top",
-            end: () => `+=${getScrollDistance() || 1}`,
-            scrub: 0.6,
-            pin: true,
-            pinType: "fixed",
-            anticipatePin: 1,
-            invalidateOnRefresh: true,
-          },
-        });
-
-        return () => {
-          tween.kill();
-        };
-      });
-
-      const images = Array.from(
-        timelineSectionRef.current.querySelectorAll("img")
-      );
-      let loadedCount = 0;
-      const handleImageLoad = () => {
-        loadedCount += 1;
-        if (loadedCount === images.length) {
-          ScrollTrigger.refresh();
-        }
-      };
-
-      images.forEach((img) => {
-        if (img.complete) {
-          handleImageLoad();
-        } else {
-          img.addEventListener("load", handleImageLoad);
-          img.addEventListener("error", handleImageLoad);
-        }
-      });
-
-      window.addEventListener("load", () => ScrollTrigger.refresh());
-
-      return () => {
-        images.forEach((img) => {
-          img.removeEventListener("load", handleImageLoad);
-          img.removeEventListener("error", handleImageLoad);
-        });
-      };
-    }, timelineSectionRef);
 
     return () => ctx.revert();
   }, []);
@@ -391,36 +277,7 @@ export default function AboutUsPage() {
         </div>
       </section>
 
-      {/* ---- Section 3: Our Timeline ---- */}
-      <section ref={timelineSectionRef} className="timeline-section">
-        <div className="timeline-heading-wrap">
-          <h2 ref={timelineHeadingRef} className="timeline-heading">
-            Our Timeline
-          </h2>
-          <span className="timeline-heading-rule" aria-hidden="true" />
-        </div>
-
-        <div ref={timelineWrapperRef} className="timeline-wrapper">
-          <div ref={timelineTrackRef} className="timeline-track">
-            {TIMELINE_ITEMS.map((item) => (
-              <div key={item.year} className="timeline-item">
-                <div className="timeline-image-wrap">
-                  <img
-                    src={item.image}
-                    alt={item.year}
-                    className="timeline-image"
-                    draggable={false}
-                  />
-                </div>
-                <span className="timeline-year">{item.year}</span>
-                <p className="timeline-text">{item.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---- Section 4: Stats / Performance ---- */}
+      {/* ---- Section 3: Stats / Performance ---- */}
       <section ref={statsSectionRef} className="stats-section">
         <div className="stats-topbar">
           <span className="stats-topbar-dash" />
@@ -476,7 +333,7 @@ export default function AboutUsPage() {
         </div>
       </section>
 
-      {/* ---- Section 5: CTA / Let us inspire ---- */}
+      {/* ---- Section 4: CTA / Let us inspire ---- */}
       <section ref={ctaSectionRef} className="cta-section">
         <div className="cta-bg-decor" aria-hidden="true" />
 
@@ -645,95 +502,6 @@ const css = `
   height: 100%;
   object-fit: cover;
   display: block;
-}
-
-.timeline-section {
-  position: relative;
-  background-color: #ffffff;
-  padding: clamp(40px, 8vw, 96px) 0 clamp(40px, 8vw, 96px);
-}
-
-.timeline-heading-wrap {
-  padding: 0 6vw;
-  margin-bottom: clamp(28px, 6vw, 72px);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.timeline-heading {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-weight: 500;
-  font-size: clamp(1.9rem, 6vw, 4.2rem);
-  letter-spacing: -0.03em;
-  color: #141313;
-  line-height: 1;
-}
-
-.timeline-heading-rule {
-  width: 48px;
-  height: 3px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, var(--pkr-blue), var(--pkr-green));
-}
-
-.timeline-wrapper {
-  width: 100%;
-  overflow: hidden;
-}
-
-.timeline-track {
-  display: flex;
-  align-items: flex-start;
-  gap: clamp(28px, 6vw, 96px);
-  padding: 0 6vw;
-  width: max-content;
-  will-change: transform;
-}
-
-.timeline-item {
-  display: flex;
-  flex-direction: column;
-  width: clamp(240px, 26vw, 420px);
-  flex-shrink: 0;
-}
-
-.timeline-image-wrap {
-  position: relative;
-  width: 100%;
-  height: clamp(240px, 34vw, 520px);
-  overflow: hidden;
-  background-color: #ececec;
-  margin-bottom: clamp(16px, 2.4vw, 32px);
-}
-
-.timeline-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.timeline-year {
-  display: block;
-  font-family: var(--font-heading);
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: var(--pkr-blue);
-  margin-bottom: 10px;
-}
-
-.timeline-text {
-  margin: 0;
-  font-family: var(--font-body);
-  font-weight: 400;
-  font-size: 0.92rem;
-  line-height: 1.55;
-  color: rgba(20,19,18,0.6);
-  max-width: 34ch;
 }
 
 .stats-section {
@@ -1133,28 +901,6 @@ const css = `
     min-height: 200px;
     border-radius: 14px;
   }
-  .timeline-heading-wrap {
-    padding: 0 16px;
-    margin-bottom: 22px;
-  }
-  .timeline-heading {
-    font-size: 1.7rem;
-  }
-  .timeline-track {
-    gap: 18px;
-    padding: 0 16px;
-  }
-  .timeline-item {
-    width: 84vw;
-  }
-  .timeline-image-wrap {
-    height: 58vw;
-    margin-bottom: 12px;
-    border-radius: 12px;
-  }
-  .timeline-text {
-    font-size: 0.85rem;
-  }
   .stats-section {
     padding: 32px 16px 44px;
   }
@@ -1191,11 +937,11 @@ const css = `
 
 /* ============ Mobile (<= 599px) ============ */
 @media (max-width: 599px) {
-  .aboutus-heading-section {
-    padding: 48px 20px 22px;
-    gap: 14px;
-    margin-top: 60px;
-  }
+ .aboutus-heading-section {
+  padding: 48px 20px 22px;
+  gap: 14px;
+  margin-top: 60px;
+}
 
   .aboutus-heading-line {
     font-size: clamp(2.1rem, 11vw, 2.8rem);
@@ -1214,58 +960,6 @@ const css = `
   .aboutus-hero-wrap {
     aspect-ratio: 4 / 3.2;
     border-radius: 16px;
-  }
-
-  .timeline-section {
-    padding: 36px 0;
-  }
-
-  .timeline-heading-wrap {
-    padding: 0 20px;
-    margin-bottom: 24px;
-  }
-
-  .timeline-heading {
-    font-size: clamp(1.7rem, 8vw, 2.2rem);
-  }
-
-  .timeline-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .timeline-wrapper::-webkit-scrollbar {
-    display: none;
-  }
-
-  .timeline-track {
-    gap: 20px;
-    padding: 0 20px;
-  }
-
-  .timeline-item {
-    width: 80vw;
-    scroll-snap-align: start;
-  }
-
-  .timeline-wrapper {
-    scroll-snap-type: x mandatory;
-  }
-
-  .timeline-image-wrap {
-    height: 60vw;
-    margin-bottom: 14px;
-    border-radius: 14px;
-  }
-
-  .timeline-year {
-    font-size: 1rem;
-  }
-
-  .timeline-text {
-    font-size: 0.9rem;
-    max-width: none;
   }
 
   .stats-section {
@@ -1389,34 +1083,6 @@ const css = `
     border-radius: 18px;
   }
 
-  .timeline-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .timeline-wrapper::-webkit-scrollbar {
-    display: none;
-  }
-
-  .timeline-track {
-    gap: 28px;
-    padding: 0 5vw;
-  }
-
-  .timeline-item {
-    width: 46vw;
-    scroll-snap-align: start;
-  }
-
-  .timeline-wrapper {
-    scroll-snap-type: x mandatory;
-  }
-
-  .timeline-image-wrap {
-    height: 36vw;
-  }
-
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 40px 28px;
@@ -1456,10 +1122,6 @@ const css = `
     font-size: 7.5rem;
   }
 
-  .timeline-item {
-    width: 460px;
-  }
-
   .cta-heading {
     font-size: 5rem;
   }
@@ -1474,12 +1136,8 @@ const css = `
     min-height: 200px;
     aspect-ratio: auto;
   }
-  .timeline-image-wrap {
-    height: 40vh;
-  }
   .cta-person-row {
     flex-direction: row;
   }
 }
 `;
-
